@@ -31,22 +31,18 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.18.0
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   firebase_core: ^3.12.1
+  # Add these packages for local storage
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -89,3 +85,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "android/app/src/main/res/app_icon.png"
+  adaptive_icon_background: "#212121" # Dark background for adaptive icons
+  adaptive_icon_foreground: "android/app/src/main/res/app_icon.png"
