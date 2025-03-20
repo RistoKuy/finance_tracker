@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Add storage permissions for local database access -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    
     <application
-        android:label="finance_tracker"
+        android:label="Finance Tracker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

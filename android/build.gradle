@@ -16,3 +16,16 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.1'
+        // Remove these lines if they exist:
+        // classpath 'com.google.gms:google-services:4.3.15'
+        // classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.4'
+    }
+}

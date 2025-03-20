@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'asset.dart'; // Import the AssetMenu
+import 'asset.dart';
+import 'database/asset_database.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize the database when the app starts
+  await AssetDatabase.instance.database;
+  
   runApp(const MyApp());
 }
 

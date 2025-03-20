@@ -1,0 +1,1 @@
+C:\Project\finance_tracker\build\app\intermediates\cxx\RelWithDebInfo\69g5f1e5\obj\armeabi-v7a
