@@ -395,118 +395,140 @@ class _AssetMenuState extends State<AssetMenu> {
                       width: 1,
                     ),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _addOrEditAsset(index: index),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: _typeColors[asset['type']]!.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(25),
+                  // Removed the InkWell to make the card non-touchable
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header row with asset info and larger action buttons
+                        Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: _typeColors[asset['type']]!.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: Icon(
+                                _typeIcons[asset['type']],
+                                color: _typeColors[asset['type']],
+                                size: 30,
+                              ),
                             ),
-                            child: Icon(
-                              _typeIcons[asset['type']],
-                              color: _typeColors[asset['type']],
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  asset['name'],
-                                  style: const TextStyle(
-                                      fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(
-                                      asset['type'],
-                                      style: TextStyle(
-                                        color: _typeColors[asset['type']],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade800,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        asset['currency'],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    asset['name'],
+                                    style: const TextStyle(
+                                        fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        asset['type'],
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey.shade300,
+                                          color: _typeColors[asset['type']],
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade800,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          asset['currency'],
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              formatCurrency(asset['nominal'], asset['currency']),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Bottom row with date and more accessible action buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(asset['date'])}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade400,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(asset['date'])}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade400,
+                              ),
+                            ),
+                            // More accessible action buttons for mobile users
+                            Row(
+                              children: [
+                                // Edit button - larger and more touchable
+                                ElevatedButton.icon(
+                                  onPressed: () => _addOrEditAsset(index: index),
+                                  icon: const Icon(Icons.edit),
+                                  label: const Text('Edit'),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.blue.shade700,
+                                    minimumSize: const Size(100, 36),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Delete button - larger and more touchable
+                                ElevatedButton.icon(
+                                  onPressed: () => _deleteAsset(index),
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text('Delete'),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.red.shade700,
+                                    minimumSize: const Size(100, 36),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                formatCurrency(asset['nominal'], asset['currency']),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, size: 20),
-                                    onPressed: () => _addOrEditAsset(index: index),
-                                    tooltip: 'Edit',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, size: 20),
-                                    onPressed: () => _deleteAsset(index),
-                                    tooltip: 'Delete',
-                                    color: Colors.red.shade300,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 );
               },
             ),
-      floatingActionButton: _assets.isEmpty
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _addOrEditAsset(),
-              tooltip: 'Add Asset',
-              child: const Icon(Icons.add),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addOrEditAsset(),
+        tooltip: 'Add Asset',
+        icon: const Icon(Icons.add),
+        label: const Text('Add Asset'),
+      ),
     );
   }
 
