@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'asset.dart'; // Import the AssetMenu
 
 void main() {
   runApp(const MyApp());
@@ -42,26 +43,34 @@ class MainMenu extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 48),
-            _buildMenuButton(context, 'Asset', Icons.account_balance),
+            _buildMenuButton(context, 'Asset', Icons.account_balance, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AssetMenu()),
+              );
+            }),
             const SizedBox(height: 16),
-            _buildMenuButton(context, 'Depreciation', Icons.trending_down),
+            _buildMenuButton(context, 'Depreciation', Icons.trending_down, () {
+              // Navigation will be implemented later
+            }),
             const SizedBox(height: 16),
-            _buildMenuButton(context, 'Monthly Tracker', Icons.calendar_today),
+            _buildMenuButton(context, 'Monthly Tracker', Icons.calendar_today, () {
+              // Navigation will be implemented later
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuButton(BuildContext context, String title, IconData icon) {
+  Widget _buildMenuButton(
+      BuildContext context, String title, IconData icon, VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
         minimumSize: const Size(240, 60),
       ),
-      onPressed: () {
-        // Navigation will be implemented later
-      },
+      onPressed: onPressed,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
