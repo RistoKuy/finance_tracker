@@ -1,0 +1,2 @@
+C:/Project/finance_tracker/android/app/.cxx/RelWithDebInfo/69g5f1e5/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Project/finance_tracker/android/app/.cxx/RelWithDebInfo/69g5f1e5/armeabi-v7a/CMakeFiles/rebuild_cache.dir
