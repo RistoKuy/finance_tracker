@@ -14,7 +14,22 @@ class _AssetMenuState extends State<AssetMenu> {
   String _assetType = 'Transactional';
   String _assetName = '';
   double _assetNominal = 0.0;
-  final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+  String _currency = 'USD'; // Default currency
+
+  // Currency options
+  final Map<String, String> _currencySymbols = {
+    'USD': '\$',
+    'EUR': '€',
+    'JPY': '¥',
+    'IDR': 'Rp',
+  };
+  
+  final Map<String, String> _currencyLocales = {
+    'USD': 'en_US',
+    'EUR': 'de_DE',
+    'JPY': 'ja_JP',
+    'IDR': 'id_ID',
+  };
 
   // Asset type specific colors and icons
   final Map<String, Color> _typeColors = {
@@ -29,6 +44,33 @@ class _AssetMenuState extends State<AssetMenu> {
     'Investment': Icons.trending_up,
   };
 
+  // Format currency based on selected currency
+  String formatCurrency(double amount, String currency) {
+    final locale = _currencyLocales[currency] ?? 'en_US';
+    final symbol = _currencySymbols[currency] ?? '\$';
+    
+    if (currency == 'IDR') {
+      // Special case for IDR to show without decimal places
+      return NumberFormat.currency(
+        locale: locale,
+        symbol: symbol,
+        decimalDigits: 0,
+      ).format(amount);
+    } else if (currency == 'JPY') {
+      // JPY typically doesn't use decimal places
+      return NumberFormat.currency(
+        locale: locale,
+        symbol: symbol,
+        decimalDigits: 0,
+      ).format(amount);
+    } else {
+      return NumberFormat.currency(
+        locale: locale,
+        symbol: symbol,
+      ).format(amount);
+    }
+  }
+
   void _addOrEditAsset({int? index}) {
     if (index != null) {
       // Pre-fill form for editing
@@ -36,11 +78,13 @@ class _AssetMenuState extends State<AssetMenu> {
       _assetType = asset['type'];
       _assetName = asset['name'];
       _assetNominal = asset['nominal'];
+      _currency = asset['currency'];
     } else {
       // Reset form for adding
       _assetType = 'Transactional';
       _assetName = '';
       _assetNominal = 0.0;
+      // Keep the last selected currency for convenience
     }
 
     showDialog(
@@ -108,12 +152,65 @@ class _AssetMenuState extends State<AssetMenu> {
                         value == null || value.isEmpty ? 'Enter a name' : null,
                   ),
                   const SizedBox(height: 16),
+                  const Text('Select currency:'),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade700),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _currency,
+                      decoration: const InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                        border: InputBorder.none,
+                      ),
+                      items: _currencySymbols.entries
+                          .map((entry) => DropdownMenuItem(
+                                value: entry.key,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade800,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        entry.value,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text('${entry.key} (${entry.value})'),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _currency = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
                     decoration: InputDecoration(
                       labelText: 'Asset Value',
                       hintText: '0.00',
-                      prefixIcon: const Icon(Icons.attach_money),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                        child: Text(
+                          _currencySymbols[_currency] ?? '\$',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -136,10 +233,19 @@ class _AssetMenuState extends State<AssetMenu> {
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.cancel),
               label: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
@@ -148,6 +254,7 @@ class _AssetMenuState extends State<AssetMenu> {
                       'type': _assetType,
                       'name': _assetName,
                       'nominal': _assetNominal,
+                      'currency': _currency,
                       'date': DateTime.now(),
                     };
                     if (index == null) {
@@ -160,7 +267,10 @@ class _AssetMenuState extends State<AssetMenu> {
                 }
               },
               icon: const Icon(Icons.save),
-              label: const Text('Save'),
+              label: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -307,12 +417,31 @@ class _AssetMenuState extends State<AssetMenu> {
                                       fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  asset['type'],
-                                  style: TextStyle(
-                                    color: _typeColors[asset['type']],
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      asset['type'],
+                                      style: TextStyle(
+                                        color: _typeColors[asset['type']],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade800,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        asset['currency'],
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -330,7 +459,7 @@ class _AssetMenuState extends State<AssetMenu> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                currencyFormat.format(asset['nominal']),
+                                formatCurrency(asset['nominal'], asset['currency']),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
