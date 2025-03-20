@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Add this dependency to pubspec.yaml
 
 class AssetMenu extends StatefulWidget {
   const AssetMenu({super.key});
@@ -13,6 +14,20 @@ class _AssetMenuState extends State<AssetMenu> {
   String _assetType = 'Transactional';
   String _assetName = '';
   double _assetNominal = 0.0;
+  final currencyFormat = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+
+  // Asset type specific colors and icons
+  final Map<String, Color> _typeColors = {
+    'Transactional': Colors.blue,
+    'Savings': Colors.green,
+    'Investment': Colors.amber,
+  };
+
+  final Map<String, IconData> _typeIcons = {
+    'Transactional': Icons.account_balance_wallet,
+    'Savings': Icons.savings,
+    'Investment': Icons.trending_up,
+  };
 
   void _addOrEditAsset({int? index}) {
     if (index != null) {
@@ -30,59 +45,102 @@ class _AssetMenuState extends State<AssetMenu> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: Text(index == null ? 'Add Asset' : 'Edit Asset'),
-          content: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: _assetType,
-                  items: ['Transactional', 'Savings', 'Investment']
-                      .map((type) => DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _assetType = value!;
-                    });
-                  },
-                  decoration: const InputDecoration(labelText: 'Asset Type'),
-                ),
-                TextFormField(
-                  initialValue: _assetName,
-                  decoration: const InputDecoration(labelText: 'Asset Name'),
-                  onChanged: (value) {
-                    _assetName = value;
-                  },
-                  validator: (value) =>
-                      value == null || value.isEmpty ? 'Enter a name' : null,
-                ),
-                TextFormField(
-                  initialValue: _assetNominal.toString(),
-                  decoration: const InputDecoration(labelText: 'Asset Nominal'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    _assetNominal = double.tryParse(value) ?? 0.0;
-                  },
-                  validator: (value) =>
-                      value == null || double.tryParse(value) == null
-                          ? 'Enter a valid number'
-                          : null,
-                ),
-              ],
+          title: Text(
+            index == null ? 'Add New Asset' : 'Edit Asset',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Select asset type:'),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade700),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _assetType,
+                      decoration: const InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                        border: InputBorder.none,
+                      ),
+                      items: ['Transactional', 'Savings', 'Investment']
+                          .map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Row(
+                                  children: [
+                                    Icon(_typeIcons[type], color: _typeColors[type]),
+                                    const SizedBox(width: 8),
+                                    Text(type),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _assetType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: _assetName,
+                    decoration: InputDecoration(
+                      labelText: 'Asset Name',
+                      prefixIcon: const Icon(Icons.label),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      _assetName = value;
+                    },
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter a name' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
+                    decoration: InputDecoration(
+                      labelText: 'Asset Value',
+                      hintText: '0.00',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      _assetNominal = double.tryParse(value) ?? 0.0;
+                    },
+                    validator: (value) =>
+                        value == null || double.tryParse(value) == null
+                            ? 'Enter a valid number'
+                            : null,
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
-            TextButton(
+            TextButton.icon(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              icon: const Icon(Icons.cancel),
+              label: const Text('Cancel'),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   setState(() {
@@ -101,7 +159,8 @@ class _AssetMenuState extends State<AssetMenu> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Save'),
+              icon: const Icon(Icons.save),
+              label: const Text('Save'),
             ),
           ],
         );
@@ -110,9 +169,29 @@ class _AssetMenuState extends State<AssetMenu> {
   }
 
   void _deleteAsset(int index) {
-    setState(() {
-      _assets.removeAt(index);
-    });
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete ${_assets[index]['name']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () {
+              setState(() {
+                _assets.removeAt(index);
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -120,34 +199,188 @@ class _AssetMenuState extends State<AssetMenu> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Assets'),
-      ),
-      body: ListView.builder(
-        itemCount: _assets.length,
-        itemBuilder: (context, index) {
-          final asset = _assets[index];
-          return ListTile(
-            title: Text('${asset['name']} (${asset['type']})'),
-            subtitle: Text(
-                'Nominal: ${asset['nominal']} - Last Updated: ${asset['date']}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _addOrEditAsset(index: index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteAsset(index),
-                ),
-              ],
+        actions: [
+          if (_assets.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.sort),
+              tooltip: 'Sort assets',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => SimpleDialog(
+                    title: const Text('Sort by'),
+                    children: [
+                      _buildSortOption('Name', () {
+                        setState(() {
+                          _assets.sort((a, b) => a['name'].compareTo(b['name']));
+                        });
+                        Navigator.pop(context);
+                      }),
+                      _buildSortOption('Value (High to Low)', () {
+                        setState(() {
+                          _assets.sort((a, b) => b['nominal'].compareTo(a['nominal']));
+                        });
+                        Navigator.pop(context);
+                      }),
+                      _buildSortOption('Most Recent', () {
+                        setState(() {
+                          _assets.sort((a, b) => b['date'].compareTo(a['date']));
+                        });
+                        Navigator.pop(context);
+                      }),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEditAsset(),
-        child: const Icon(Icons.add),
+      body: _assets.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance,
+                    size: 80,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No assets added yet',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Tap the + button to add your first asset'),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => _addOrEditAsset(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Asset'),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _assets.length,
+              itemBuilder: (context, index) {
+                final asset = _assets[index];
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: _typeColors[asset['type']]!.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _addOrEditAsset(index: index),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _typeColors[asset['type']]!.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Icon(
+                              _typeIcons[asset['type']],
+                              color: _typeColors[asset['type']],
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  asset['name'],
+                                  style: const TextStyle(
+                                      fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  asset['type'],
+                                  style: TextStyle(
+                                    color: _typeColors[asset['type']],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(asset['date'])}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                currencyFormat.format(asset['nominal']),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 20),
+                                    onPressed: () => _addOrEditAsset(index: index),
+                                    tooltip: 'Edit',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, size: 20),
+                                    onPressed: () => _deleteAsset(index),
+                                    tooltip: 'Delete',
+                                    color: Colors.red.shade300,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: _assets.isEmpty
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _addOrEditAsset(),
+              tooltip: 'Add Asset',
+              child: const Icon(Icons.add),
+            ),
+    );
+  }
+
+  Widget _buildSortOption(String title, VoidCallback onTap) {
+    return SimpleDialogOption(
+      onPressed: onTap,
+      child: Row(
+        children: [
+          const Icon(Icons.sort),
+          const SizedBox(width: 8),
+          Text(title),
+        ],
       ),
     );
   }
