@@ -91,188 +91,197 @@ class _AssetMenuState extends State<AssetMenu> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          title: Text(
-            index == null ? 'Add New Asset' : 'Edit Asset',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Select asset type:'),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade700),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: _assetType,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        border: InputBorder.none,
-                      ),
-                      items: ['Transactional', 'Savings', 'Investment']
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Row(
-                                  children: [
-                                    Icon(_typeIcons[type], color: _typeColors[type]),
-                                    const SizedBox(width: 8),
-                                    Text(type),
-                                  ],
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _assetType = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: _assetName,
-                    decoration: InputDecoration(
-                      labelText: 'Asset Name',
-                      prefixIcon: const Icon(Icons.label),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      _assetName = value;
-                    },
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Enter a name' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Select currency:'),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade700),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: _currency,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        border: InputBorder.none,
-                      ),
-                      items: _currencySymbols.entries
-                          .map((entry) => DropdownMenuItem(
-                                value: entry.key,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade800,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        entry.value,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+        // Create a StatefulBuilder to update the dialog content when currency changes
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(
+                index == null ? 'Add New Asset' : 'Edit Asset',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Select asset type:'),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade700),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _assetType,
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                            border: InputBorder.none,
+                          ),
+                          items: ['Transactional', 'Savings', 'Investment']
+                              .map((type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Row(
+                                      children: [
+                                        Icon(_typeIcons[type], color: _typeColors[type]),
+                                        const SizedBox(width: 8),
+                                        Text(type),
+                                      ],
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text('${entry.key} (${entry.value})'),
-                                  ],
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _currency = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
-                    decoration: InputDecoration(
-                      labelText: 'Asset Value',
-                      hintText: '0.00',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                        child: Text(
-                          _currencySymbols[_currency] ?? '\$',
-                          style: const TextStyle(fontSize: 16),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _assetType = value!;
+                            });
+                          },
                         ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: _assetName,
+                        decoration: InputDecoration(
+                          labelText: 'Asset Name',
+                          prefixIcon: const Icon(Icons.label),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          _assetName = value;
+                        },
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Enter a name' : null,
                       ),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      _assetNominal = double.tryParse(value) ?? 0.0;
-                    },
-                    validator: (value) =>
-                        value == null || double.tryParse(value) == null
-                            ? 'Enter a valid number'
-                            : null,
+                      const SizedBox(height: 16),
+                      const Text('Select currency:'),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade700),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _currency,
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                            border: InputBorder.none,
+                          ),
+                          items: _currencySymbols.entries
+                              .map((entry) => DropdownMenuItem(
+                                    value: entry.key,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade800,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            entry.value,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text('${entry.key} (${entry.value})'),
+                                      ],
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            // Update both the dialog state and the parent state
+                            setDialogState(() {
+                              _currency = value!;
+                            });
+                            setState(() {
+                              _currency = value!;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
+                        decoration: InputDecoration(
+                          labelText: 'Asset Value',
+                          hintText: '0.00',
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                            child: Text(
+                              _currencySymbols[_currency] ?? '\$',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          _assetNominal = double.tryParse(value) ?? 0.0;
+                        },
+                        validator: (value) =>
+                            value == null || double.tryParse(value) == null
+                                ? 'Enter a valid number'
+                                : null,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.cancel),
-              label: const Text('Cancel'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    final asset = {
-                      'type': _assetType,
-                      'name': _assetName,
-                      'nominal': _assetNominal,
-                      'currency': _currency,
-                      'date': DateTime.now(),
-                    };
-                    if (index == null) {
-                      _assets.add(asset);
-                    } else {
-                      _assets[index] = asset;
+              actions: [
+                TextButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      setState(() {
+                        final asset = {
+                          'type': _assetType,
+                          'name': _assetName,
+                          'nominal': _assetNominal,
+                          'currency': _currency,
+                          'date': DateTime.now(),
+                        };
+                        if (index == null) {
+                          _assets.add(asset);
+                        } else {
+                          _assets[index] = asset;
+                        }
+                      });
+                      Navigator.pop(context);
                     }
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              icon: const Icon(Icons.save),
-              label: const Text(
-                'Save',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+                  },
+                  icon: const Icon(Icons.save),
+                  label: const Text(
+                    'Save',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          }
         );
       },
     );
