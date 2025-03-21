@@ -225,7 +225,6 @@ class _AssetMenuState extends State<AssetMenu> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
                         decoration: InputDecoration(
                           labelText: 'Asset Value',
                           hintText: '0.00',
@@ -242,10 +241,25 @@ class _AssetMenuState extends State<AssetMenu> {
                         ),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          _assetNominal = double.tryParse(value) ?? 0.0;
+                          final parsedValue = double.tryParse(value.replaceAll(',', '')) ?? 0.0;
+                          setDialogState(() {
+                            _assetNominal = parsedValue;
+                          });
+                          setState(() {
+                            _assetNominal = parsedValue;
+                          });
                         },
+                        controller: TextEditingController(
+                          text: _assetNominal > 0
+                              ? formatCurrency(_assetNominal, _currency)
+                              : '',
+                        )..selection = TextSelection.collapsed(
+                            offset: _assetNominal > 0
+                                ? formatCurrency(_assetNominal, _currency).length
+                                : 0,
+                          ),
                         validator: (value) =>
-                            value == null || double.tryParse(value) == null
+                            value == null || double.tryParse(value.replaceAll(',', '')) == null
                                 ? 'Enter a valid number'
                                 : null,
                       ),
