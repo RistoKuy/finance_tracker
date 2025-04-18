@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, deprecated_member_use, unnecessary_to_list_in_spreads
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +19,10 @@ class _AssetMenuState extends State<AssetMenu> {
   String _assetName = '';
   double _assetNominal = 0.0;
   String _currency = 'USD'; // Default currency
+  
+  // Multiple selection mode
+  bool _isSelectionMode = false;
+  Set<int> _selectedAssetIds = {};
   
   // Controller for formatted asset value input
   final TextEditingController _assetValueController = TextEditingController();
@@ -689,44 +693,162 @@ class _AssetMenuState extends State<AssetMenu> {
     );
   }
 
+  // Toggle selection mode
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      // Clear selections when exiting selection mode
+      if (!_isSelectionMode) {
+        _selectedAssetIds.clear();
+      }
+    });
+  }
+  
+  // Toggle selection of a specific asset
+  void _toggleAssetSelection(int assetId) {
+    setState(() {
+      if (_selectedAssetIds.contains(assetId)) {
+        _selectedAssetIds.remove(assetId);
+      } else {
+        _selectedAssetIds.add(assetId);
+      }
+      
+      // If no items selected, exit selection mode
+      if (_selectedAssetIds.isEmpty && _isSelectionMode) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+  
+  // Select all assets
+  void _selectAllAssets() {
+    setState(() {
+      if (_selectedAssetIds.length == _assets.length) {
+        // If all are selected, deselect all
+        _selectedAssetIds.clear();
+      } else {
+        // Select all
+        _selectedAssetIds = _assets.map((asset) => asset['id'] as int).toSet();
+      }
+    });
+  }
+  
+  // Delete multiple assets
+  void _deleteSelectedAssets() {
+    if (_selectedAssetIds.isEmpty) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: Text(
+          'Are you sure you want to delete ${_selectedAssetIds.length} selected ${_selectedAssetIds.length == 1 ? 'asset' : 'assets'}?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () async {
+              // Delete all selected assets
+              for (final id in _selectedAssetIds) {
+                await AssetDatabase.instance.deleteAsset(id);
+              }
+              
+              // Refresh the list and exit selection mode
+              await _refreshAssets();
+              setState(() {
+                _isSelectionMode = false;
+                _selectedAssetIds.clear();
+              });
+              
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assets'),
+        title: _isSelectionMode 
+          ? Text('${_selectedAssetIds.length} selected')
+          : const Text('Assets'),
+        leading: _isSelectionMode
+          ? IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _toggleSelectionMode,
+            )
+          : null,
         actions: [
           if (_assets.isNotEmpty)
+            _isSelectionMode
+              ? Row(
+                  children: [
+                    // Select all button
+                    IconButton(
+                      icon: Icon(
+                        _selectedAssetIds.length == _assets.length
+                            ? Icons.select_all
+                            : Icons.check_box_outline_blank,
+                      ),
+                      tooltip: 'Select all',
+                      onPressed: _selectAllAssets,
+                    ),
+                    // Delete selected button
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      tooltip: 'Delete selected',
+                      onPressed: _selectedAssetIds.isNotEmpty
+                          ? _deleteSelectedAssets
+                          : null,
+                    ),
+                  ],
+                )
+              : IconButton(
+                  icon: const Icon(Icons.sort),
+                  tooltip: 'Sort assets',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => SimpleDialog(
+                        title: const Text('Sort by'),
+                        children: [
+                          _buildSortOption('Name', () {
+                            setState(() {
+                              _assets.sort((a, b) => a['name'].compareTo(b['name']));
+                            });
+                            Navigator.pop(context);
+                          }),
+                          _buildSortOption('Value (High to Low)', () {
+                            setState(() {
+                              _assets.sort((a, b) => b['nominal'].compareTo(a['nominal']));
+                            });
+                            Navigator.pop(context);
+                          }),
+                          _buildSortOption('Most Recent', () {
+                            setState(() {
+                              _assets.sort((a, b) => b['date'].compareTo(a['date']));
+                            });
+                            Navigator.pop(context);
+                          }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+          // Selection mode toggle
+          if (_assets.isNotEmpty && !_isSelectionMode)
             IconButton(
-              icon: const Icon(Icons.sort),
-              tooltip: 'Sort assets',
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => SimpleDialog(
-                    title: const Text('Sort by'),
-                    children: [
-                      _buildSortOption('Name', () {
-                        setState(() {
-                          _assets.sort((a, b) => a['name'].compareTo(b['name']));
-                        });
-                        Navigator.pop(context);
-                      }),
-                      _buildSortOption('Value (High to Low)', () {
-                        setState(() {
-                          _assets.sort((a, b) => b['nominal'].compareTo(a['nominal']));
-                        });
-                        Navigator.pop(context);
-                      }),
-                      _buildSortOption('Most Recent', () {
-                        setState(() {
-                          _assets.sort((a, b) => b['date'].compareTo(a['date']));
-                        });
-                        Navigator.pop(context);
-                      }),
-                    ],
-                  ),
-                );
-              },
+              icon: const Icon(Icons.checklist),
+              tooltip: 'Select multiple',
+              onPressed: _toggleSelectionMode,
             ),
         ],
       ),
@@ -808,191 +930,222 @@ class _AssetMenuState extends State<AssetMenu> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                               side: BorderSide(
-                                color: _typeColors[asset['type']]!.withOpacity(0.5),
-                                width: 1,
+                                color: _selectedAssetIds.contains(asset['id'])
+                                    ? Colors.blue
+                                    : _typeColors[asset['type']]!.withOpacity(0.5),
+                                width: _selectedAssetIds.contains(asset['id']) ? 2 : 1,
                               ),
                             ),
-                            // Removed the InkWell to make the card non-touchable
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header row with asset info and larger action buttons
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: _typeColors[asset['type']]!.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(25),
-                                        ),
-                                        child: Icon(
-                                          _typeIcons[asset['type']],
-                                          color: _typeColors[asset['type']],
-                                          size: 30,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Tooltip(
-                                              message: asset['name'],
-                                              child: Text(
-                                                asset['name'],
-                                                style: const TextStyle(
-                                                    fontSize: 18, fontWeight: FontWeight.bold),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                            child: InkWell(
+                              onTap: _isSelectionMode
+                                ? () => _toggleAssetSelection(asset['id'])
+                                : null,
+                              onLongPress: !_isSelectionMode
+                                ? () {
+                                    _toggleSelectionMode();
+                                    _toggleAssetSelection(asset['id']);
+                                  }
+                                : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header row with asset info and larger action buttons
+                                    Row(
+                                      children: [
+                                        // Selection checkbox (shown only in selection mode)
+                                        if (_isSelectionMode)
+                                          Padding(
+                                            padding: const EdgeInsets.only(right: 12),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: _selectedAssetIds.contains(asset['id'])
+                                                    ? Colors.blue
+                                                    : Colors.grey.shade300.withOpacity(0.3),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(2.0),
+                                                child: _selectedAssetIds.contains(asset['id'])
+                                                    ? const Icon(Icons.check, size: 20, color: Colors.white)
+                                                    : const Icon(Icons.circle_outlined, size: 20, color: Colors.white70),
                                               ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  asset['type'],
-                                                  style: TextStyle(
-                                                    color: _typeColors[asset['type']],
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey.shade800,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    asset['currency'],
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.grey.shade300,
-                                                    ),
-                                                  ),
-                                                ),
-                                                // Show a "Details" icon if name is too long
-                                                if (asset['name'].toString().length > 25)
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(left: 8.0),
-                                                    child: GestureDetector(
-                                                      onTap: () => _showAssetDetails(asset),
-                                                      child: Container(
-                                                        padding: const EdgeInsets.all(4),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.grey.shade800,
-                                                          shape: BoxShape.circle,
-                                                        ),
-                                                        child: const Icon(
-                                                          Icons.info_outline,
-                                                          size: 16,
-                                                          color: Colors.white70,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ],
+                                          ),
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: _typeColors[asset['type']]!.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(25),
+                                          ),
+                                          child: Icon(
+                                            _typeIcons[asset['type']],
+                                            color: _typeColors[asset['type']],
+                                            size: 30,
+                                          ),
                                         ),
-                                      ),
-                                      Container(
-                                        constraints: const BoxConstraints(maxWidth: 180),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Flexible(
-                                              child: Tooltip(
-                                                message: formatCurrency(asset['nominal'], asset['currency']),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Tooltip(
+                                                message: asset['name'],
                                                 child: Text(
-                                                  formatCurrency(asset['nominal'], asset['currency']),
+                                                  asset['name'],
                                                   style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                                      fontSize: 18, fontWeight: FontWeight.bold),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            ),
-                                            // Show a "Details" icon if the value is very large
-                                            if (asset['nominal'] > 999999)
-                                              GestureDetector(
-                                                onTap: () => _showAssetDetails(asset),
-                                                child: Container(
-                                                  margin: const EdgeInsets.only(left: 4),
-                                                  padding: const EdgeInsets.all(4),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.blue.withOpacity(0.1),
-                                                    shape: BoxShape.circle,
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    asset['type'],
+                                                    style: TextStyle(
+                                                      color: _typeColors[asset['type']],
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
                                                   ),
-                                                  child: const Icon(
-                                                    Icons.visibility,
-                                                    size: 16,
-                                                    color: Colors.blue,
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey.shade800,
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      asset['currency'],
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey.shade300,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Show a "Details" icon if name is too long
+                                                  if (asset['name'].toString().length > 25)
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(left: 8.0),
+                                                      child: GestureDetector(
+                                                        onTap: () => _showAssetDetails(asset),
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(4),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.grey.shade800,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.info_outline,
+                                                            size: 16,
+                                                            color: Colors.white70,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          constraints: const BoxConstraints(maxWidth: 180),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Tooltip(
+                                                  message: formatCurrency(asset['nominal'], asset['currency']),
+                                                  child: Text(
+                                                    formatCurrency(asset['nominal'], asset['currency']),
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                               ),
+                                              // Show a "Details" icon if the value is very large
+                                              if (asset['nominal'] > 999999)
+                                                GestureDetector(
+                                                  onTap: () => _showAssetDetails(asset),
+                                                  child: Container(
+                                                    margin: const EdgeInsets.only(left: 4),
+                                                    padding: const EdgeInsets.all(4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.blue.withOpacity(0.1),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.visibility,
+                                                      size: 16,
+                                                      color: Colors.blue,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // Bottom row with date and more accessible action buttons
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(assetDate)}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade400,
+                                            ),
+                                          ),
+                                        ),
+                                        // More accessible action buttons for mobile users
+                                        Row(
+                                          children: [
+                                            // Edit button - larger and more touchable
+                                            ElevatedButton.icon(
+                                              onPressed: () => _addOrEditAsset(index: index),
+                                              icon: const Icon(Icons.edit),
+                                              label: const Text('Edit'),
+                                              style: ElevatedButton.styleFrom(
+                                                foregroundColor: Colors.white,
+                                                backgroundColor: Colors.blue.shade700,
+                                                minimumSize: const Size(100, 36),
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // Delete button - larger and more touchable
+                                            ElevatedButton.icon(
+                                              onPressed: () => _deleteAsset(index),
+                                              icon: const Icon(Icons.delete),
+                                              label: const Text('Delete'),
+                                              style: ElevatedButton.styleFrom(
+                                                foregroundColor: Colors.white,
+                                                backgroundColor: Colors.red.shade700,
+                                                minimumSize: const Size(100, 36),
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Bottom row with date and more accessible action buttons
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(assetDate)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade400,
-                                          ),
-                                        ),
-                                      ),
-                                      // More accessible action buttons for mobile users
-                                      Row(
-                                        children: [
-                                          // Edit button - larger and more touchable
-                                          ElevatedButton.icon(
-                                            onPressed: () => _addOrEditAsset(index: index),
-                                            icon: const Icon(Icons.edit),
-                                            label: const Text('Edit'),
-                                            style: ElevatedButton.styleFrom(
-                                              foregroundColor: Colors.white,
-                                              backgroundColor: Colors.blue.shade700,
-                                              minimumSize: const Size(100, 36),
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          // Delete button - larger and more touchable
-                                          ElevatedButton.icon(
-                                            onPressed: () => _deleteAsset(index),
-                                            icon: const Icon(Icons.delete),
-                                            label: const Text('Delete'),
-                                            style: ElevatedButton.styleFrom(
-                                              foregroundColor: Colors.white,
-                                              backgroundColor: Colors.red.shade700,
-                                              minimumSize: const Size(100, 36),
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
