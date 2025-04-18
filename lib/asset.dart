@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'database/asset_database.dart';
@@ -395,6 +397,272 @@ class _AssetMenuState extends State<AssetMenu> {
     );
   }
 
+  // Get total assets by currency
+  Map<String, double> _getTotalsByCurrency() {
+    final Map<String, double> totals = {};
+    
+    for (final asset in _assets) {
+      final String currency = asset['currency'];
+      final double amount = asset['nominal'];
+      
+      if (totals.containsKey(currency)) {
+        totals[currency] = totals[currency]! + amount;
+      } else {
+        totals[currency] = amount;
+      }
+    }
+    
+    return totals;
+  }
+  
+  // Get sub-totals by asset type for each currency
+  Map<String, Map<String, double>> _getSubTotalsByTypeAndCurrency() {
+    final Map<String, Map<String, double>> subTotals = {};
+    
+    for (final asset in _assets) {
+      final String currency = asset['currency'];
+      final String type = asset['type'];
+      final double amount = asset['nominal'];
+      
+      if (!subTotals.containsKey(currency)) {
+        subTotals[currency] = {};
+      }
+      
+      if (subTotals[currency]!.containsKey(type)) {
+        subTotals[currency]![type] = subTotals[currency]![type]! + amount;
+      } else {
+        subTotals[currency]![type] = amount;
+      }
+    }
+    
+    return subTotals;
+  }
+  
+  // Build the Total Assets summary widget
+  Widget _buildTotalAssetsWidget() {
+    // Get totals
+    final Map<String, double> totals = _getTotalsByCurrency();
+    final Map<String, Map<String, double>> subTotals = _getSubTotalsByTypeAndCurrency();
+    
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.all(8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Colors.purple.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title section
+            Row(
+              children: [
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(22.5),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance,
+                    color: Colors.purple,
+                    size: 25,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Total Assets',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text('Asset Totals Information'),
+                          ],
+                        ),
+                        content: const SingleChildScrollView(
+                          child: ListBody(
+                            children: [
+                              Text('This section shows the total value of all your assets grouped by currency.'),
+                              SizedBox(height: 8),
+                              Text('• Each currency is displayed separately as they cannot be directly combined.'),
+                              SizedBox(height: 8),
+                              Text('• Below each currency total, you can see a breakdown by asset type (Transactional, Savings, and Investment).'),
+                              SizedBox(height: 8),
+                              Text('• The percentage shows how much of your portfolio each type represents within that currency.'),
+                            ],
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Got it'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            
+            // No assets case
+            if (totals.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'No assets to display',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              )
+            else
+              // Display each currency total with its breakdown
+              ...totals.entries.map((entry) {
+                final String currency = entry.key;
+                final double totalAmount = entry.value;
+                final Map<String, double>? currencySubTotals = subTotals[currency];
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Currency total
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade800,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            currency,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade200,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          formatCurrency(totalAmount, currency),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Subtotals by asset type for this currency
+                    ...?currencySubTotals?.entries.map((typeEntry) {
+                      final String type = typeEntry.key;
+                      final double typeAmount = typeEntry.value;
+                      final double percentage = (typeAmount / totalAmount) * 100;
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 24, bottom: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _typeIcons[type],
+                              color: _typeColors[type],
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                type,
+                                style: TextStyle(
+                                  color: _typeColors[type],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              formatCurrency(typeAmount, currency),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _typeColors[type]!.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${percentage.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _typeColors[type],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    
+                    // Add divider between currencies
+                    if (currency != totals.keys.last)
+                      Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          Divider(color: Colors.grey.shade700),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                  ],
+                );
+              }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -459,78 +727,180 @@ class _AssetMenuState extends State<AssetMenu> {
                     ],
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: _assets.length,
-                  itemBuilder: (context, index) {
-                    final asset = _assets[index];
-                    // For the date, parse it from string back to DateTime
-                    final DateTime assetDate = DateTime.parse(asset['date']);
-                    
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: _typeColors[asset['type']]!.withOpacity(0.5),
-                          width: 1,
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Total Assets Summary
+                      _buildTotalAssetsWidget(),
+                      
+                      // Individual Assets List Title
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Your Assets',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade800,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${_assets.length}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade200,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      // Removed the InkWell to make the card non-touchable
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header row with asset info and larger action buttons
-                            Row(
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: _typeColors[asset['type']]!.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  child: Icon(
-                                    _typeIcons[asset['type']],
-                                    color: _typeColors[asset['type']],
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                      
+                      // Individual Assets List - No longer in an Expanded widget
+                      ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        shrinkWrap: true, // Important to make ListView work inside ScrollView
+                        physics: const NeverScrollableScrollPhysics(), // Disable ListView's scrolling
+                        itemCount: _assets.length,
+                        itemBuilder: (context, index) {
+                          final asset = _assets[index];
+                          final DateTime assetDate = DateTime.parse(asset['date']);
+                          
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: _typeColors[asset['type']]!.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            // Removed the InkWell to make the card non-touchable
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header row with asset info and larger action buttons
+                                  Row(
                                     children: [
-                                      Text(
-                                        asset['name'],
-                                        style: const TextStyle(
-                                            fontSize: 18, fontWeight: FontWeight.bold),
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: _typeColors[asset['type']]!.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                        child: Icon(
+                                          _typeIcons[asset['type']],
+                                          color: _typeColors[asset['type']],
+                                          size: 30,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              asset['name'],
+                                              style: const TextStyle(
+                                                  fontSize: 18, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  asset['type'],
+                                                  style: TextStyle(
+                                                    color: _typeColors[asset['type']],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade800,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    asset['currency'],
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: Colors.grey.shade300,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        formatCurrency(asset['nominal'], asset['currency']),
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Bottom row with date and more accessible action buttons
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(assetDate)}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade400,
+                                          ),
+                                        ),
+                                      ),
+                                      // More accessible action buttons for mobile users
                                       Row(
                                         children: [
-                                          Text(
-                                            asset['type'],
-                                            style: TextStyle(
-                                              color: _typeColors[asset['type']],
-                                              fontWeight: FontWeight.w500,
+                                          // Edit button - larger and more touchable
+                                          ElevatedButton.icon(
+                                            onPressed: () => _addOrEditAsset(index: index),
+                                            icon: const Icon(Icons.edit),
+                                            label: const Text('Edit'),
+                                            style: ElevatedButton.styleFrom(
+                                              foregroundColor: Colors.white,
+                                              backgroundColor: Colors.blue.shade700,
+                                              minimumSize: const Size(100, 36),
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade800,
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              asset['currency'],
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey.shade300,
+                                          // Delete button - larger and more touchable
+                                          ElevatedButton.icon(
+                                            onPressed: () => _deleteAsset(index),
+                                            icon: const Icon(Icons.delete),
+                                            label: const Text('Delete'),
+                                            style: ElevatedButton.styleFrom(
+                                              foregroundColor: Colors.white,
+                                              backgroundColor: Colors.red.shade700,
+                                              minimumSize: const Size(100, 36),
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
                                             ),
                                           ),
@@ -538,72 +908,14 @@ class _AssetMenuState extends State<AssetMenu> {
                                       ),
                                     ],
                                   ),
-                                ),
-                                Text(
-                                  formatCurrency(asset['nominal'], asset['currency']),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 12),
-                            // Bottom row with date and more accessible action buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(assetDate)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                  ),
-                                ),
-                                // More accessible action buttons for mobile users
-                                Row(
-                                  children: [
-                                    // Edit button - larger and more touchable
-                                    ElevatedButton.icon(
-                                      onPressed: () => _addOrEditAsset(index: index),
-                                      icon: const Icon(Icons.edit),
-                                      label: const Text('Edit'),
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor: Colors.blue.shade700,
-                                        minimumSize: const Size(100, 36),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Delete button - larger and more touchable
-                                    ElevatedButton.icon(
-                                      onPressed: () => _deleteAsset(index),
-                                      icon: const Icon(Icons.delete),
-                                      label: const Text('Delete'),
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor: Colors.red.shade700,
-                                        minimumSize: const Size(100, 36),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addOrEditAsset(),
