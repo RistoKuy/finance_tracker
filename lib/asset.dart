@@ -939,7 +939,7 @@ class _AssetMenuState extends State<AssetMenu> {
                             child: InkWell(
                               onTap: _isSelectionMode
                                 ? () => _toggleAssetSelection(asset['id'])
-                                : null,
+                                : () => _showAssetDetails(asset), // Make card tappable to show details
                               onLongPress: !_isSelectionMode
                                 ? () {
                                     _toggleSelectionMode();
@@ -947,17 +947,18 @@ class _AssetMenuState extends State<AssetMenu> {
                                   }
                                 : null,
                               child: Padding(
-                                padding: const EdgeInsets.all(16.0),
+                                padding: const EdgeInsets.all(12.0), // Reduced padding
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Header row with asset info and larger action buttons
+                                    // Main info row
                                     Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         // Selection checkbox (shown only in selection mode)
                                         if (_isSelectionMode)
                                           Padding(
-                                            padding: const EdgeInsets.only(right: 12),
+                                            padding: const EdgeInsets.only(right: 8),
                                             child: Container(
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
@@ -968,55 +969,91 @@ class _AssetMenuState extends State<AssetMenu> {
                                               child: Padding(
                                                 padding: const EdgeInsets.all(2.0),
                                                 child: _selectedAssetIds.contains(asset['id'])
-                                                    ? const Icon(Icons.check, size: 20, color: Colors.white)
-                                                    : const Icon(Icons.circle_outlined, size: 20, color: Colors.white70),
+                                                    ? const Icon(Icons.check, size: 18, color: Colors.white)
+                                                    : const Icon(Icons.circle_outlined, size: 18, color: Colors.white70),
                                               ),
                                             ),
                                           ),
+                                        
+                                        // Asset type icon - smaller
                                         Container(
-                                          width: 50,
-                                          height: 50,
+                                          width: 40, // Smaller icon
+                                          height: 40,
                                           decoration: BoxDecoration(
                                             color: _typeColors[asset['type']]!.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(25),
+                                            borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Icon(
                                             _typeIcons[asset['type']],
                                             color: _typeColors[asset['type']],
-                                            size: 30,
+                                            size: 24, // Smaller icon
                                           ),
                                         ),
-                                        const SizedBox(width: 16),
+                                        const SizedBox(width: 12),
+                                        
+                                        // Asset info - responsive layout
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Tooltip(
-                                                message: asset['name'],
-                                                child: Text(
-                                                  asset['name'],
-                                                  style: const TextStyle(
-                                                      fontSize: 18, fontWeight: FontWeight.bold),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Asset name with ellipsis
+                                                  Expanded(
+                                                    child: Tooltip(
+                                                      message: asset['name'],
+                                                      child: Text(
+                                                        asset['name'],
+                                                        style: const TextStyle(
+                                                          fontSize: 16, // Slightly smaller
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  
+                                                  // Details icon for any asset
+                                                  GestureDetector(
+                                                    onTap: () => _showAssetDetails(asset),
+                                                    child: Container(
+                                                      margin: const EdgeInsets.only(left: 4),
+                                                      padding: const EdgeInsets.all(2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.grey.shade800.withOpacity(0.3),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.info_outline,
+                                                        size: 14,
+                                                        color: Colors.white70,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                              
                                               const SizedBox(height: 4),
+                                              
+                                              // Asset type and currency
                                               Row(
                                                 children: [
                                                   Text(
                                                     asset['type'],
                                                     style: TextStyle(
+                                                      fontSize: 12, // Smaller
                                                       color: _typeColors[asset['type']],
                                                       fontWeight: FontWeight.w500,
                                                     ),
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                                     decoration: BoxDecoration(
                                                       color: Colors.grey.shade800,
-                                                      borderRadius: BorderRadius.circular(4),
+                                                      borderRadius: BorderRadius.circular(3),
                                                     ),
                                                     child: Text(
                                                       asset['currency'],
@@ -1026,117 +1063,83 @@ class _AssetMenuState extends State<AssetMenu> {
                                                       ),
                                                     ),
                                                   ),
-                                                  // Show a "Details" icon if name is too long
-                                                  if (asset['name'].toString().length > 25)
-                                                    Padding(
-                                                      padding: const EdgeInsets.only(left: 8.0),
-                                                      child: GestureDetector(
-                                                        onTap: () => _showAssetDetails(asset),
-                                                        child: Container(
-                                                          padding: const EdgeInsets.all(4),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.grey.shade800,
-                                                            shape: BoxShape.circle,
-                                                          ),
-                                                          child: const Icon(
-                                                            Icons.info_outline,
-                                                            size: 16,
-                                                            color: Colors.white70,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
                                                 ],
                                               ),
                                             ],
                                           ),
                                         ),
-                                        Container(
-                                          constraints: const BoxConstraints(maxWidth: 180),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Flexible(
-                                                child: Tooltip(
-                                                  message: formatCurrency(asset['nominal'], asset['currency']),
-                                                  child: Text(
-                                                    formatCurrency(asset['nominal'], asset['currency']),
-                                                    style: const TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
+                                        
+                                        // Asset value
+                                        Tooltip(
+                                          message: formatCurrency(asset['nominal'], asset['currency']),
+                                          child: Container(
+                                            constraints: const BoxConstraints(maxWidth: 120), // More constrained
+                                            child: Text(
+                                              formatCurrency(asset['nominal'], asset['currency']),
+                                              style: const TextStyle(
+                                                fontSize: 16, // Smaller font
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              // Show a "Details" icon if the value is very large
-                                              if (asset['nominal'] > 999999)
-                                                GestureDetector(
-                                                  onTap: () => _showAssetDetails(asset),
-                                                  child: Container(
-                                                    margin: const EdgeInsets.only(left: 4),
-                                                    padding: const EdgeInsets.all(4),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.blue.withOpacity(0.1),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.visibility,
-                                                      size: 16,
-                                                      color: Colors.blue,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 12),
-                                    // Bottom row with date and more accessible action buttons
+                                    
+                                    const SizedBox(height: 8), // Smaller gap
+                                    
+                                    // Bottom row with date and action buttons
                                     Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
+                                        // Date with shorter format
                                         Expanded(
                                           child: Text(
-                                            'Last updated: ${DateFormat('MMM d, yyyy - h:mm a').format(assetDate)}',
+                                            'Updated: ${DateFormat('MM/dd/yy').format(assetDate)}',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 11, // Smaller
                                               color: Colors.grey.shade400,
                                             ),
                                           ),
                                         ),
-                                        // More accessible action buttons for mobile users
+                                        
+                                        // Action buttons - more compact
                                         Row(
                                           children: [
-                                            // Edit button - larger and more touchable
+                                            // Edit button - compact
                                             ElevatedButton.icon(
                                               onPressed: () => _addOrEditAsset(index: index),
-                                              icon: const Icon(Icons.edit),
-                                              label: const Text('Edit'),
+                                              icon: const Icon(Icons.edit, size: 16),
+                                              label: const Text('Edit', 
+                                                style: TextStyle(fontSize: 12),
+                                              ),
                                               style: ElevatedButton.styleFrom(
                                                 foregroundColor: Colors.white,
                                                 backgroundColor: Colors.blue.shade700,
-                                                minimumSize: const Size(100, 36),
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                minimumSize: const Size(60, 30),
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius: BorderRadius.circular(6),
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            // Delete button - larger and more touchable
+                                            const SizedBox(width: 6),
+                                            // Delete button - compact
                                             ElevatedButton.icon(
                                               onPressed: () => _deleteAsset(index),
-                                              icon: const Icon(Icons.delete),
-                                              label: const Text('Delete'),
+                                              icon: const Icon(Icons.delete, size: 16),
+                                              label: const Text('Delete',
+                                                style: TextStyle(fontSize: 12),
+                                              ),
                                               style: ElevatedButton.styleFrom(
                                                 foregroundColor: Colors.white,
                                                 backgroundColor: Colors.red.shade700,
-                                                minimumSize: const Size(100, 36),
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                minimumSize: const Size(60, 30),
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius: BorderRadius.circular(6),
                                                 ),
                                               ),
                                             ),
