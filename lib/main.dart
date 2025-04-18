@@ -18,12 +18,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Finance Tracker',
-      theme: ThemeData.dark().copyWith(
+      theme: ThemeData.dark(
+        useMaterial3: true,
+      ).copyWith(
         colorScheme: const ColorScheme.dark(
           primary: Colors.teal,
           secondary: Colors.tealAccent,
         ),
-        useMaterial3: true,
       ),
       home: const MainMenu(),
     );

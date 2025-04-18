@@ -17,6 +17,9 @@ class _AssetMenuState extends State<AssetMenu> {
   String _assetName = '';
   double _assetNominal = 0.0;
   String _currency = 'USD'; // Default currency
+  
+  // Controller for formatted asset value input
+  final TextEditingController _assetValueController = TextEditingController();
 
   // Currency options
   final Map<String, String> _currencySymbols = {
@@ -97,11 +100,13 @@ class _AssetMenuState extends State<AssetMenu> {
       _assetName = asset['name'];
       _assetNominal = asset['nominal'];
       _currency = asset['currency'];
+      _assetValueController.text = formatCurrency(_assetNominal, _currency);
     } else {
       // Reset form for adding
       _assetType = 'Transactional';
       _assetName = '';
       _assetNominal = 0.0;
+      _assetValueController.clear();
       // Keep the last selected currency for convenience
     }
 
@@ -225,7 +230,7 @@ class _AssetMenuState extends State<AssetMenu> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        initialValue: _assetNominal > 0 ? _assetNominal.toString() : '',
+                        controller: _assetValueController,
                         decoration: InputDecoration(
                           labelText: 'Asset Value',
                           hintText: '0.00',
@@ -242,10 +247,20 @@ class _AssetMenuState extends State<AssetMenu> {
                         ),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          _assetNominal = double.tryParse(value) ?? 0.0;
+                          // Remove any non-digit characters
+                          String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          // Format the cleaned value with thousand separators
+                          String formattedValue = NumberFormat('#,###').format(int.parse(cleanedValue));
+                          // Update the controller text with the formatted value
+                          _assetValueController.value = TextEditingValue(
+                            text: formattedValue,
+                            selection: TextSelection.collapsed(offset: formattedValue.length),
+                          );
+                          // Update the asset nominal value
+                          _assetNominal = double.tryParse(cleanedValue) ?? 0.0;
                         },
                         validator: (value) =>
-                            value == null || double.tryParse(value) == null
+                            value == null || double.tryParse(value.replaceAll(',', '')) == null
                                 ? 'Enter a valid number'
                                 : null,
                       ),
