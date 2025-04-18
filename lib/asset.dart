@@ -100,7 +100,13 @@ class _AssetMenuState extends State<AssetMenu> {
       _assetName = asset['name'];
       _assetNominal = asset['nominal'];
       _currency = asset['currency'];
-      _assetValueController.text = formatCurrency(_assetNominal, _currency);
+      // Set the controller text with just the number value (without currency symbol)
+      _assetValueController.text = _assetNominal.toString().replaceAll(RegExp(r'\.0+$'), '');
+      // Format the number with thousand separators
+      if (_assetNominal > 0) {
+        String formattedValue = NumberFormat('#,###').format(_assetNominal.toInt());
+        _assetValueController.text = formattedValue;
+      }
     } else {
       // Reset form for adding
       _assetType = 'Transactional';
@@ -247,22 +253,58 @@ class _AssetMenuState extends State<AssetMenu> {
                         ),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          // Remove any non-digit characters
+                          if (value.isEmpty) {
+                            _assetNominal = 0.0;
+                            return;
+                          }
+                          
+                          // Remove any non-digit characters to get the raw number
                           String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-                          // Format the cleaned value with thousand separators
-                          String formattedValue = NumberFormat('#,###').format(int.parse(cleanedValue));
-                          // Update the controller text with the formatted value
-                          _assetValueController.value = TextEditingValue(
-                            text: formattedValue,
-                            selection: TextSelection.collapsed(offset: formattedValue.length),
-                          );
-                          // Update the asset nominal value
-                          _assetNominal = double.tryParse(cleanedValue) ?? 0.0;
+                          
+                          // Convert to double for storage
+                          if (cleanedValue.isNotEmpty) {
+                            _assetNominal = double.parse(cleanedValue);
+                          } else {
+                            _assetNominal = 0.0;
+                          }
+                          
+                          // Only update the text field if we have a valid number
+                          if (cleanedValue.isNotEmpty) {
+                            // Format the cleaned value with thousand separators
+                            String formattedValue = NumberFormat('#,###').format(int.parse(cleanedValue));
+                            
+                            // Only update if the formatted value is different to avoid cursor jumping
+                            if (formattedValue != value) {
+                              // Update the controller text with the formatted value and preserve cursor position
+                              int cursorPosition = _assetValueController.selection.start;
+                              // Calculate how many separators were before the cursor
+                              int oldSeparatorsBeforeCursor = value.substring(0, cursorPosition).replaceAll(RegExp(r'[0-9]'), '').length;
+                              // Calculate new cursor position
+                              int newPosition = cursorPosition + (formattedValue.length - value.length);
+                              if (newPosition < 0) newPosition = 0;
+                              if (newPosition > formattedValue.length) newPosition = formattedValue.length;
+                              
+                              // Update the controller value
+                              _assetValueController.value = TextEditingValue(
+                                text: formattedValue,
+                                selection: TextSelection.collapsed(offset: newPosition),
+                              );
+                            }
+                          }
                         },
-                        validator: (value) =>
-                            value == null || double.tryParse(value.replaceAll(',', '')) == null
-                                ? 'Enter a valid number'
-                                : null,
+                        validator: (value) {
+                          // Allow saving if the value hasn't changed or if it's a valid number
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter an amount';
+                          }
+                          
+                          String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          if (cleanedValue.isEmpty) {
+                            return 'Please enter a valid number';
+                          }
+                          
+                          return null;
+                        },
                       ),
                     ],
                   ),
