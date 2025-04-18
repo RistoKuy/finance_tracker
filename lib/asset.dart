@@ -663,6 +663,32 @@ class _AssetMenuState extends State<AssetMenu> {
     );
   }
 
+  void _showAssetDetails(Map<String, dynamic> asset) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Asset Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Name: ${asset['name']}'),
+            Text('Type: ${asset['type']}'),
+            Text('Value: ${formatCurrency(asset['nominal'], asset['currency'])}'),
+            Text('Currency: ${asset['currency']}'),
+            Text('Date: ${DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(asset['date']))}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -813,10 +839,15 @@ class _AssetMenuState extends State<AssetMenu> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              asset['name'],
-                                              style: const TextStyle(
-                                                  fontSize: 18, fontWeight: FontWeight.bold),
+                                            Tooltip(
+                                              message: asset['name'],
+                                              child: Text(
+                                                asset['name'],
+                                                style: const TextStyle(
+                                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
                                             const SizedBox(height: 4),
                                             Row(
@@ -843,16 +874,69 @@ class _AssetMenuState extends State<AssetMenu> {
                                                     ),
                                                   ),
                                                 ),
+                                                // Show a "Details" icon if name is too long
+                                                if (asset['name'].toString().length > 25)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    child: GestureDetector(
+                                                      onTap: () => _showAssetDetails(asset),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(4),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey.shade800,
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.info_outline,
+                                                          size: 16,
+                                                          color: Colors.white70,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
                                               ],
                                             ),
                                           ],
                                         ),
                                       ),
-                                      Text(
-                                        formatCurrency(asset['nominal'], asset['currency']),
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
+                                      Container(
+                                        constraints: const BoxConstraints(maxWidth: 180),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Flexible(
+                                              child: Tooltip(
+                                                message: formatCurrency(asset['nominal'], asset['currency']),
+                                                child: Text(
+                                                  formatCurrency(asset['nominal'], asset['currency']),
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            // Show a "Details" icon if the value is very large
+                                            if (asset['nominal'] > 999999)
+                                              GestureDetector(
+                                                onTap: () => _showAssetDetails(asset),
+                                                child: Container(
+                                                  margin: const EdgeInsets.only(left: 4),
+                                                  padding: const EdgeInsets.all(4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue.withOpacity(0.1),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.visibility,
+                                                    size: 16,
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                     ],
