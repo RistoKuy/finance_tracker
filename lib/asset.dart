@@ -498,7 +498,7 @@ class _AssetMenuState extends State<AssetMenu> {
                           children: [
                             Icon(Icons.info_outline, color: Colors.blue),
                             SizedBox(width: 8),
-                            Text('Asset Totals Information'),
+                            Text('Asset Information'),
                           ],
                         ),
                         content: const SingleChildScrollView(
