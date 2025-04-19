@@ -876,6 +876,7 @@ class _AssetMenuState extends State<AssetMenu> {
                   ),
                 )
               : SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 80), // Add bottom padding for FAB clearance
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
