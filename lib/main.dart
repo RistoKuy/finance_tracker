@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'asset.dart';
 import 'database/asset_database.dart';
@@ -32,63 +34,105 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainMenu extends StatelessWidget {
+class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        title: const Text('Finance Tracker'),
+  State<MainMenu> createState() => _MainMenuState();
+}
+
+class _MainMenuState extends State<MainMenu> {
+  @override
+  void initState() {
+    super.initState();
+    // Navigate to AssetMenu after 2 seconds
+    Timer(const Duration(seconds: 2), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AssetMenu()),
+      );
+    });
+  }
+
+  // Function to show exit confirmation dialog
+  Future<bool> _showExitConfirmDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Exit App'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to exit the Finance Tracker app?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Exit',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
-      body: Center(
+    ) ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          final shouldExit = await _showExitConfirmDialog();
+          if (shouldExit && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
+      child: Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Welcome to Finance Tracker',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          children: [
+            Icon(
+              Icons.account_balance,
+              size: 80,
+              color: Colors.white,
             ),
-            const SizedBox(height: 48),
-            _buildMenuButton(context, 'Asset', Icons.account_balance, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AssetMenu()),
-              );
-            }),
-            const SizedBox(height: 16),
-            _buildMenuButton(context, 'Depreciation', Icons.trending_down, () {
-              // Navigation will be implemented later
-            }),
-            const SizedBox(height: 16),
-            _buildMenuButton(context, 'Monthly Tracker', Icons.calendar_today, () {
-              // Navigation will be implemented later
-            }),
+            SizedBox(height: 24),
+            Text(
+              'Finance Tracker',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 48),
+            CircularProgressIndicator(
+              color: Colors.white,
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMenuButton(
-      BuildContext context, String title, IconData icon, VoidCallback onPressed) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-        minimumSize: const Size(240, 60),
-      ),
-      onPressed: onPressed,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18),
-          ),
-        ],
       ),
     );
   }

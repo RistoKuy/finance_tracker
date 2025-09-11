@@ -773,10 +773,64 @@ class _AssetMenuState extends State<AssetMenu> {
     );
   }
 
+  // Function to show exit confirmation dialog
+  Future<bool> _showExitConfirmDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Exit App'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to exit the Finance Tracker app?\n\nYour data will be saved automatically.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false), // Don't exit
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(context).pop(true), // Exit the app
+            child: const Text(
+              'Exit',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ) ?? false; // Return false if dialog is dismissed
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: false, // Prevent default back button behavior
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          final shouldExit = await _showExitConfirmDialog();
+          if (shouldExit && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: _isSelectionMode 
           ? Text('${_selectedAssetIds.length} selected')
           : const Text('Assets'),
@@ -1158,11 +1212,12 @@ class _AssetMenuState extends State<AssetMenu> {
                     ],
                   ),
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _addOrEditAsset(),
-        tooltip: 'Add Asset',
-        icon: const Icon(Icons.add),
-        label: const Text('Add Asset'),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _addOrEditAsset(),
+          tooltip: 'Add Asset',
+          icon: const Icon(Icons.add),
+          label: const Text('Add Asset'),
+        ),
       ),
     );
   }
