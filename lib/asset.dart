@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'database/asset_database.dart';
+import 'history.dart';
 
 class AssetMenu extends StatefulWidget {
   const AssetMenu({super.key});
@@ -349,11 +350,53 @@ class _AssetMenuState extends State<AssetMenu> {
                       if (index == null) {
                         // Create new asset
                         await AssetDatabase.instance.createAsset(asset);
+                        
+                        // Log the creation
+                        await AssetDatabase.instance.logAssetChange(
+                          changeType: 'CREATE',
+                          assetName: _assetName,
+                          assetType: _assetType,
+                          newValue: _assetNominal,
+                          currency: _currency,
+                          description: 'Created new $_assetType asset "$_assetName" with value ${formatCurrency(_assetNominal, _currency)}',
+                        );
                       } else {
                         // Update existing asset
+                        final oldAsset = _assets[index];
                         await AssetDatabase.instance.updateAsset(
                           _assets[index]['id'],
                           asset,
+                        );
+                        
+                        // Log the update with details of what changed
+                        String changeDescription = 'Updated asset "$_assetName"';
+                        List<String> changes = [];
+                        
+                        if (oldAsset['name'] != _assetName) {
+                          changes.add('name: "${oldAsset['name']}" → "$_assetName"');
+                        }
+                        if (oldAsset['type'] != _assetType) {
+                          changes.add('type: "${oldAsset['type']}" → "$_assetType"');
+                        }
+                        if (oldAsset['nominal'] != _assetNominal) {
+                          changes.add('value: ${formatCurrency(oldAsset['nominal'], oldAsset['currency'])} → ${formatCurrency(_assetNominal, _currency)}');
+                        }
+                        if (oldAsset['currency'] != _currency) {
+                          changes.add('currency: "${oldAsset['currency']}" → "$_currency"');
+                        }
+                        
+                        if (changes.isNotEmpty) {
+                          changeDescription += ' (${changes.join(', ')})';
+                        }
+                        
+                        await AssetDatabase.instance.logAssetChange(
+                          changeType: 'UPDATE',
+                          assetName: _assetName,
+                          assetType: _assetType,
+                          oldValue: oldAsset['nominal'],
+                          newValue: _assetNominal,
+                          currency: _currency,
+                          description: changeDescription,
                         );
                       }
                       
@@ -390,7 +433,19 @@ class _AssetMenuState extends State<AssetMenu> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
-              await AssetDatabase.instance.deleteAsset(_assets[index]['id']);
+              final asset = _assets[index];
+              await AssetDatabase.instance.deleteAsset(asset['id']);
+              
+              // Log the deletion
+              await AssetDatabase.instance.logAssetChange(
+                changeType: 'DELETE',
+                assetName: asset['name'],
+                assetType: asset['type'],
+                oldValue: asset['nominal'],
+                currency: asset['currency'],
+                description: 'Deleted ${asset['type']} asset "${asset['name']}" with value ${formatCurrency(asset['nominal'], asset['currency'])}',
+              );
+              
               await _refreshAssets();
               Navigator.pop(context);
             },
@@ -752,9 +807,46 @@ class _AssetMenuState extends State<AssetMenu> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
+              // Get selected assets for logging before deletion
+              final selectedAssets = _assets.where((asset) => _selectedAssetIds.contains(asset['id'])).toList();
+              
               // Delete all selected assets
               for (final id in _selectedAssetIds) {
                 await AssetDatabase.instance.deleteAsset(id);
+              }
+              
+              // Log the bulk deletion
+              if (selectedAssets.length == 1) {
+                final asset = selectedAssets.first;
+                await AssetDatabase.instance.logAssetChange(
+                  changeType: 'DELETE',
+                  assetName: asset['name'],
+                  assetType: asset['type'],
+                  oldValue: asset['nominal'],
+                  currency: asset['currency'],
+                  description: 'Deleted ${asset['type']} asset "${asset['name']}" with value ${formatCurrency(asset['nominal'], asset['currency'])}',
+                );
+              } else {
+                // Create a summary for bulk deletion
+                Map<String, int> typeCount = {};
+                double totalValue = 0;
+                String primaryCurrency = selectedAssets.isNotEmpty ? selectedAssets.first['currency'] : 'USD';
+                
+                for (final asset in selectedAssets) {
+                  typeCount[asset['type']] = (typeCount[asset['type']] ?? 0) + 1;
+                  if (asset['currency'] == primaryCurrency) {
+                    totalValue += asset['nominal'];
+                  }
+                }
+                
+                String typesSummary = typeCount.entries.map((e) => '${e.value} ${e.key}').join(', ');
+                
+                await AssetDatabase.instance.logAssetChange(
+                  changeType: 'BULK_DELETE',
+                  assetName: 'Multiple Assets',
+                  description: 'Bulk deleted ${selectedAssets.length} assets ($typesSummary) with combined value ${formatCurrency(totalValue, primaryCurrency)}',
+                  currency: primaryCurrency,
+                );
               }
               
               // Refresh the list and exit selection mode
@@ -903,6 +995,20 @@ class _AssetMenuState extends State<AssetMenu> {
               icon: const Icon(Icons.checklist),
               tooltip: 'Select multiple',
               onPressed: _toggleSelectionMode,
+            ),
+          // History button - always visible
+          if (!_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'View changes history',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryScreen(),
+                  ),
+                );
+              },
             ),
         ],
       ),
