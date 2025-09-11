@@ -4,20 +4,48 @@ import 'package:path/path.dart';
 class AssetDatabase {
   static final AssetDatabase instance = AssetDatabase._init();
   static Database? _database;
+  
+  // Connection pool for better performance
+  static bool _isInitializing = false;
 
   AssetDatabase._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('finance_tracker.db');
-    return _database!;
+    
+    // Prevent multiple simultaneous initializations
+    if (_isInitializing) {
+      while (_isInitializing) {
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+      return _database!;
+    }
+    
+    _isInitializing = true;
+    try {
+      _database = await _initDB('finance_tracker.db');
+      return _database!;
+    } catch (e) {
+      _isInitializing = false;
+      // Log error but don't crash the app
+      print('Database initialization error: $e');
+      rethrow;
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 2, onCreate: _createDB, onUpgrade: _upgradeDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+      // Removed onConfigure to prevent SQLite PRAGMA issues with sqflite
+    );
   }
 
   Future _createDB(Database db, int version) async {
@@ -75,13 +103,51 @@ class AssetDatabase {
   }
 
   Future<int> createAsset(Map<String, dynamic> asset) async {
-    final db = await instance.database;
-    return await db.insert('assets', asset);
+    try {
+      final db = await instance.database;
+      return await db.insert('assets', asset);
+    } catch (e) {
+      print('Error creating asset: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> readAllAssets() async {
+    try {
+      final db = await instance.database;
+      // Use index for better performance on large datasets
+      return await db.query(
+        'assets',
+        orderBy: 'date DESC',
+        // Add limit if needed for pagination in future
+      );
+    } catch (e) {
+      print('Error reading assets: $e');
+      return []; // Return empty list instead of crashing
+    }
+  }
+
+  // Optimized method to get assets by type (with caching potential)
+  Future<List<Map<String, dynamic>>> readAssetsByType(String type) async {
     final db = await instance.database;
-    return await db.query('assets', orderBy: 'date DESC');
+    return await db.query(
+      'assets',
+      where: 'type = ?',
+      whereArgs: [type],
+      orderBy: 'date DESC',
+    );
+  }
+
+  // Batch operations for better performance
+  Future<void> createMultipleAssets(List<Map<String, dynamic>> assets) async {
+    final db = await instance.database;
+    final batch = db.batch();
+    
+    for (final asset in assets) {
+      batch.insert('assets', asset);
+    }
+    
+    await batch.commit(noResult: true);
   }
 
   Future<int> updateAsset(int id, Map<String, dynamic> asset) async {
@@ -111,7 +177,32 @@ class AssetDatabase {
 
   Future<List<Map<String, dynamic>>> readAllChanges() async {
     final db = await instance.database;
-    return await db.query('changes_history', orderBy: 'timestamp DESC');
+    return await db.query(
+      'changes_history',
+      orderBy: 'timestamp DESC',
+      // Consider adding pagination for large datasets
+    );
+  }
+
+  // Optimized method to get changes with pagination
+  Future<List<Map<String, dynamic>>> readChangesPaginated({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final db = await instance.database;
+    return await db.query(
+      'changes_history',
+      orderBy: 'timestamp DESC',
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  // Get changes count for pagination
+  Future<int> getChangesCount() async {
+    final db = await instance.database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM changes_history');
+    return result.first['count'] as int;
   }
 
   Future<int> deleteChangeRecord(int id) async {

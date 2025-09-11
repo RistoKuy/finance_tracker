@@ -30,16 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Remove the following Firebase-related dependencies if they exist:
-  # firebase_core: ^x.x.x
-  # firebase_auth: ^x.x.x
-  # cloud_firestore: ^x.x.x
-  # firebase_storage: ^x.x.x
-  # firebase_analytics: ^x.x.x
-  # ...any other firebase dependencies...
+  # Core dependencies - kept minimal for performance
   intl: ^0.18.0
   cupertino_icons: ^1.0.8
-  # Add these packages for local storage
+  # Local storage for better performance than Firebase
   sqflite: ^2.3.0
   path: ^1.8.3
   shared_preferences: ^2.2.2

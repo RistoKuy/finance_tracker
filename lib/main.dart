@@ -1,11 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'asset.dart';
 import 'database/asset_database.dart';
+import 'constants/app_constants.dart';
+import 'utils/performance_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize performance monitoring
+  PerformanceManager.initialize();
+  
+  // Performance optimizations
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   
   // Initialize the database when the app starts
   await AssetDatabase.instance.database;
@@ -20,16 +29,23 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Remove the debug banner
-      title: 'Finance Tracker',
+      title: AppConstants.appTitle,
       theme: ThemeData.dark(
         useMaterial3: true,
       ).copyWith(
         colorScheme: const ColorScheme.dark(
-          primary: Colors.teal,
-          secondary: Colors.tealAccent,
+          primary: AppConstants.primaryTeal,
+          secondary: AppConstants.accentTeal,
         ),
       ),
-      home: const MainMenu(),
+      home: const MainMenu(key: AppConstants.mainMenuKey),
+      // Performance optimizations
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+          child: child!,
+        );
+      },
     );
   }
 }
@@ -45,12 +61,14 @@ class _MainMenuState extends State<MainMenu> {
   @override
   void initState() {
     super.initState();
-    // Navigate to AssetMenu after 2 seconds
-    Timer(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AssetMenu()),
-      );
+    // Navigate to AssetMenu after 2 seconds using const duration
+    Timer(AppConstants.splashDuration, () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AssetMenu(key: AppConstants.assetMenuKey)),
+        );
+      }
     });
   }
 
@@ -62,31 +80,31 @@ class _MainMenuState extends State<MainMenu> {
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.warning_amber, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Exit App'),
+            AppWidgets.warningIcon,
+            AppWidgets.smallHorizontalSpacing,
+            Text(AppConstants.exitConfirmTitle),
           ],
         ),
         content: const Text(
-          'Are you sure you want to exit the Finance Tracker app?',
+          AppConstants.exitConfirmMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text(
               'Cancel',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: AppConstants.boldTextStyle,
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppConstants.redDanger,
+              foregroundColor: AppConstants.whiteColor,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text(
               'Exit',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: AppConstants.boldTextStyle,
             ),
           ),
         ],
@@ -112,24 +130,14 @@ class _MainMenuState extends State<MainMenu> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.account_balance,
-              size: 80,
-              color: Colors.white,
-            ),
-            SizedBox(height: 24),
+            AppWidgets.appIcon,
+            AppWidgets.largeSpacing,
             Text(
-              'Finance Tracker',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              AppConstants.appTitle,
+              style: AppConstants.appTitleStyle,
             ),
-            SizedBox(height: 48),
-            CircularProgressIndicator(
-              color: Colors.white,
-            ),
+            AppWidgets.extraLargeSpacing,
+            AppWidgets.loadingIndicator,
           ],
         ),
       ),
