@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'database/asset_database.dart';
 import 'history.dart';
+import 'settings.dart';
+import 'constants/date_format_manager.dart';
 
 class AssetMenu extends StatefulWidget {
   const AssetMenu({super.key});
@@ -735,7 +737,7 @@ class _AssetMenuState extends State<AssetMenu> {
             Text('Type: ${asset['type']}'),
             Text('Value: ${formatCurrency(asset['nominal'], asset['currency'])}'),
             Text('Currency: ${asset['currency']}'),
-            Text('Date: ${DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(asset['date']))}'),
+            Text('Date: ${DateFormat(DateFormatManager.currentFormat).format(DateTime.parse(asset['date']))}'),
           ],
         ),
         actions: [
@@ -1010,6 +1012,22 @@ class _AssetMenuState extends State<AssetMenu> {
                 );
               },
             ),
+          // Settings button - always visible
+          if (!_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+                // Refresh the UI to apply any date format changes
+                setState(() {});
+              },
+            ),
         ],
       ),
       body: _isLoading 
@@ -1258,7 +1276,7 @@ class _AssetMenuState extends State<AssetMenu> {
                                         // Date with shorter format
                                         Expanded(
                                           child: Text(
-                                            'Updated: ${DateFormat('MM/dd/yy').format(assetDate)}',
+                                            'Updated: ${DateFormat(DateFormatManager.listDateFormat).format(assetDate)}',
                                             style: TextStyle(
                                               fontSize: 11, // Smaller
                                               color: Colors.grey.shade400,

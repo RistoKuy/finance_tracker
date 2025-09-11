@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'app_constants.dart';
+import 'date_format_manager.dart';
 
 class PerformanceUtils {
   PerformanceUtils._();
@@ -53,12 +54,13 @@ class PerformanceUtils {
   }
 
   // Performance-optimized date formatting
-  static String formatDateTime(String? timestamp, {String pattern = 'MMM d, yyyy - h:mm a'}) {
+  static String formatDateTime(String? timestamp, {String? pattern}) {
     if (timestamp == null) return 'Unknown';
     
     try {
       final dateTime = DateTime.parse(timestamp);
-      final formatter = _getDateFormatter(pattern);
+      final dateFormat = pattern ?? DateFormatManager.currentFormat;
+      final formatter = _getDateFormatter(dateFormat);
       return formatter.format(dateTime);
     } catch (e) {
       return 'Invalid date';
@@ -82,15 +84,8 @@ class PerformanceUtils {
         return '${difference.inHours}h ago';
       } else if (difference.inDays < 7) {
         return '${difference.inDays}d ago';
-      } else if (difference.inDays < 30) {
-        final weeks = (difference.inDays / 7).floor();
-        return '${weeks}w ago';
-      } else if (difference.inDays < 365) {
-        final months = (difference.inDays / 30).floor();
-        return '${months}mo ago';
       } else {
-        final years = (difference.inDays / 365).floor();
-        return '${years}y ago';
+        return DateFormat(DateFormatManager.dayMonthFormat).format(dateTime);
       }
     } catch (e) {
       return '';

@@ -116,6 +116,16 @@ class AppConstants {
   static const List<String> assetTypes = ['Transactional', 'Savings', 'Investment'];
   static const List<String> currencies = ['USD', 'EUR', 'JPY', 'IDR'];
 
+  // Date format configurations
+  static const String europeanDateFormat = 'dd/MM/yyyy - HH:mm';
+  static const String americanDateFormat = 'MMM d, yyyy - h:mm a';
+  static const String defaultDateFormat = europeanDateFormat;
+  
+  static const Map<String, String> dateFormatLabels = {
+    europeanDateFormat: 'European Format (24-hour)',
+    americanDateFormat: 'American Format (12-hour)',
+  };
+
   // Widget keys for performance optimization
   static const Key mainMenuKey = ValueKey('mainMenu');
   static const Key assetMenuKey = ValueKey('assetMenu');
@@ -165,5 +175,11 @@ class AppWidgets {
   static const Icon warningIcon = Icon(
     Icons.warning_amber,
     color: AppConstants.orangeWarning,
+  );
+  
+  // Settings icon
+  static const Icon settingsIcon = Icon(
+    Icons.settings,
+    color: AppConstants.whiteColor,
   );
 }

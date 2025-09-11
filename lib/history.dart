@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'database/asset_database.dart';
+import 'constants/date_format_manager.dart';
+import 'settings.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -130,7 +132,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final year = int.parse(parts[0]);
       final month = int.parse(parts[1]);
       final date = DateTime(year, month);
-      return DateFormat('MMMM yyyy').format(date);
+      return DateFormat(DateFormatManager.monthYearFormat).format(date);
     } catch (e) {
       return monthKey;
     }
@@ -404,7 +406,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         // Show confirmation message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Filtered by ${DateFormat('MMMM yyyy').format(_selectedCalendarMonth)}'),
+                            content: Text('Filtered by ${DateFormat(DateFormatManager.monthYearFormat).format(_selectedCalendarMonth)}'),
                             backgroundColor: Colors.green,
                             duration: const Duration(seconds: 2),
                           ),
@@ -439,7 +441,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 const SizedBox(width: 4),
                               ],
                               Text(
-                                DateFormat('MMMM yyyy').format(_selectedCalendarMonth),
+                                DateFormat(DateFormatManager.monthYearFormat).format(_selectedCalendarMonth),
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: _isCurrentMonthSelected()
@@ -859,7 +861,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     
     try {
       final dateTime = DateTime.parse(timestamp);
-      return DateFormat('MMM d, yyyy - h:mm a').format(dateTime);
+      return DateFormat(DateFormatManager.currentFormat).format(dateTime);
     } catch (e) {
       return 'Invalid date';
     }
@@ -882,7 +884,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       } else if (difference.inDays < 7) {
         return '${difference.inDays}d ago';
       } else {
-        return DateFormat('MMM d').format(dateTime);
+        return DateFormat(DateFormatManager.dayMonthFormat).format(dateTime);
       }
     } catch (e) {
       return '';
@@ -917,7 +919,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           } else if (changeDate == today.subtract(const Duration(days: 1))) {
             displayDate = 'Yesterday';
           } else {
-            displayDate = DateFormat('EEEE, MMM d, yyyy').format(date);
+            displayDate = DateFormat(DateFormatManager.weekdayDateFormat).format(date);
           }
         } catch (e) {
           displayDate = dateKey;
@@ -1072,9 +1074,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _getNoChangesTitle() {
     if (_selectedDate != null) {
       if (_filterType != 'ALL') {
-        return 'No ${_filterLabels[_filterType]!.toLowerCase()} changes on ${DateFormat('MMM d, yyyy').format(_selectedDate!)}';
+        return 'No ${_filterLabels[_filterType]!.toLowerCase()} changes on ${DateFormat(DateFormatManager.shortDateFormat).format(_selectedDate!)}';
       } else {
-        return 'No changes on ${DateFormat('MMM d, yyyy').format(_selectedDate!)}';
+        return 'No changes on ${DateFormat(DateFormatManager.shortDateFormat).format(_selectedDate!)}';
       }
     } else if (_filterType != 'ALL' && _selectedMonth != 'ALL') {
       return 'No ${_filterLabels[_filterType]!.toLowerCase()} changes in ${_formatMonthDisplay(_selectedMonth)}';
@@ -1162,6 +1164,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           onPressed: _toggleSelectionMode,
                           tooltip: 'Select multiple',
                         ),
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                          // Refresh the UI to apply any date format changes
+                          setState(() {});
+                        },
+                        tooltip: 'Settings',
+                      ),
                     ],
                   ),
         ],
@@ -1255,7 +1271,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Date: ${DateFormat('MMM d, yyyy').format(_selectedDate!)}',
+                                    'Date: ${DateFormat(DateFormatManager.shortDateFormat).format(_selectedDate!)}',
                                     style: TextStyle(
                                       color: Colors.purple.shade700,
                                       fontWeight: FontWeight.bold,
