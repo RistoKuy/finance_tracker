@@ -735,7 +735,7 @@ class _AssetMenuState extends State<AssetMenu> {
             Text('Type: ${asset['type']}'),
             Text('Value: ${formatCurrency(asset['nominal'], asset['currency'])}'),
             Text('Currency: ${asset['currency']}'),
-            Text('Date: ${DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(asset['date']))}'),
+            Text('Date: ${DateFormat('dd/MM/yyyy - HH:mm').format(DateTime.parse(asset['date']))}'),
           ],
         ),
         actions: [
@@ -1258,7 +1258,7 @@ class _AssetMenuState extends State<AssetMenu> {
                                         // Date with shorter format
                                         Expanded(
                                           child: Text(
-                                            'Updated: ${DateFormat('MM/dd/yy').format(assetDate)}',
+                                            'Updated: ${DateFormat('dd/MM/yy').format(assetDate)}',
                                             style: TextStyle(
                                               fontSize: 11, // Smaller
                                               color: Colors.grey.shade400,

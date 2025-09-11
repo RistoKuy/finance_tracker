@@ -53,7 +53,7 @@ class PerformanceUtils {
   }
 
   // Performance-optimized date formatting
-  static String formatDateTime(String? timestamp, {String pattern = 'MMM d, yyyy - h:mm a'}) {
+  static String formatDateTime(String? timestamp, {String pattern = 'dd/MM/yyyy - HH:mm'}) {
     if (timestamp == null) return 'Unknown';
     
     try {
