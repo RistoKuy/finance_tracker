@@ -27,8 +27,19 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
-        versionName = flutter.versionName        // Ensure resources are properly processed
+        versionName = flutter.versionName
+        
+        // Performance optimizations
         vectorDrawables.useSupportLibrary = true
+        multiDexEnabled false  // Keep single dex for better performance
+        
+        // Memory optimization
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+        }
+        
+        // Ensure proper resource processing
+        resConfigs "en", "xxhdpi"
     }
 
     buildTypes {
@@ -37,10 +48,39 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
             
-            // Enable minification and code shrinking
+            // Enable minification and code shrinking for optimal performance
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            // Additional optimizations
+            zipAlignEnabled true
+            crunchPngs true
+            
+            // Enable split APKs for smaller download sizes
+            splits {
+                abi {
+                    enable true
+                    reset()
+                    include 'x86', 'x86_64', 'arm64-v8a', 'armeabi-v7a'
+                    universalApk true
+                }
+            }
+        }
+        
+        debug {
+            // Debug optimizations
+            minifyEnabled false
+            shrinkResources false
+            debuggable true
+        }
+        
+        profile {
+            // Profile build optimizations
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig = signingConfigs.debug
         }
     }
 }

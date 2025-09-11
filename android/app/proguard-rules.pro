@@ -13,9 +13,23 @@
 -keepattributes Signature
 -keepattributes SourceFile,LineNumberTable
 
-# Optimization settings
+# Enhanced optimization settings for better performance
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 -optimizationpasses 5
+-allowaccessmodification
+-mergeinterfacesaggressively
+-repackageclasses ''
+
+# Additional performance optimizations
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}
+
+# Remove debug information from release builds
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
 
 # Keep native methods
 -keepclasseswithmembernames class * {
