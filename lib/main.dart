@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'asset.dart';
 import 'database/asset_database.dart';
 import 'constants/app_constants.dart';
+import 'constants/date_format_manager.dart';
 import 'utils/performance_manager.dart';
 
 void main() async {
@@ -12,6 +13,9 @@ void main() async {
   
   // Initialize performance monitoring
   PerformanceManager.initialize();
+  
+  // Initialize date format manager
+  await DateFormatManager.initialize();
   
   // Performance optimizations
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

@@ -37,6 +37,11 @@ A high-performance personal finance management application built with Flutter th
 - **Frame Rate Monitoring**: Real-time performance tracking in debug mode
 - **Lazy Loading**: Efficient handling of large datasets with pagination support
 
+### ⚙️ Settings & Customization
+- **Date Format Options**: Choose between European (dd/MM/yyyy - HH:mm) and American (MMM d, yyyy - h:mm a) formats
+- **Persistent Preferences**: Settings saved across app sessions using SharedPreferences
+- **Real-time Updates**: Format changes apply immediately throughout the app
+
 ### 🎨 User Experience
 - **Dark Theme**: Beautiful Material 3 dark theme with teal accents
 - **Splash Screen**: Elegant 2-second splash with app branding
@@ -149,6 +154,11 @@ flutter build apk --analyze-size
 - **Detailed Records**: See exactly what changed with before/after comparisons
 - **Bulk Management**: Multi-select and delete history records
 
+#### Settings (`lib/settings.dart`)
+- **Date Format Selection**: Toggle between European and American date/time formats
+- **App Information**: Display app version and build details
+- **Format Manager**: Centralized date format handling with dynamic updates
+
 #### Database Layer (`lib/database/asset_database.dart`)
 - **Optimized Queries**: Efficient SQLite operations with error handling
 - **Connection Management**: Prevents multiple simultaneous initializations
@@ -162,6 +172,7 @@ flutter build apk --analyze-size
 - **App Constants**: Centralized const values for colors, styles, and configurations
 - **Performance Utils**: Cached formatters and optimized helper functions
 - **Performance Manager**: Memory management and frame rate monitoring
+- **Date Format Manager**: Dynamic date format handling with preference storage
 
 ### Build Configuration
 
