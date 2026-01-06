@@ -228,12 +228,13 @@ class AssetDatabase {
 
   Future<void> cleanupOldChanges() async {
     final db = await instance.database;
-    final twelveMonthsAgo = DateTime.now().subtract(const Duration(days: 365)).toIso8601String();
+    // Keep data for 5 years (1825 days) instead of just 12 months
+    final fiveYearsAgo = DateTime.now().subtract(const Duration(days: 1825)).toIso8601String();
     
     await db.delete(
       'changes_history',
       where: 'timestamp < ?',
-      whereArgs: [twelveMonthsAgo],
+      whereArgs: [fiveYearsAgo],
     );
   }
 
@@ -260,8 +261,66 @@ class AssetDatabase {
     
     await createChangeRecord(change);
     
-    // Clean up old records (older than 12 months) every time we add a new record
+    // Clean up old records (older than 5 years) every time we add a new record
     await cleanupOldChanges();
+  }
+  
+  /// Get all changes within a date range
+  Future<List<Map<String, dynamic>>> readChangesInRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final db = await instance.database;
+    return await db.query(
+      'changes_history',
+      where: 'timestamp >= ? AND timestamp <= ?',
+      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
+      orderBy: 'timestamp DESC',
+    );
+  }
+  
+  /// Get changes grouped by month for reporting
+  Future<Map<String, List<Map<String, dynamic>>>> getChangesGroupedByMonth() async {
+    final changes = await readAllChanges();
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    
+    for (final change in changes) {
+      final timestamp = DateTime.parse(change['timestamp'] as String);
+      final key = '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}';
+      
+      if (!grouped.containsKey(key)) {
+        grouped[key] = [];
+      }
+      grouped[key]!.add(change);
+    }
+    
+    return grouped;
+  }
+  
+  /// Get statistics for reporting
+  Future<Map<String, dynamic>> getStatistics() async {
+    final db = await instance.database;
+    
+    // Total assets count
+    final assetsResult = await db.rawQuery('SELECT COUNT(*) as count FROM assets');
+    final assetsCount = assetsResult.first['count'] as int;
+    
+    // Total changes count
+    final changesResult = await db.rawQuery('SELECT COUNT(*) as count FROM changes_history');
+    final changesCount = changesResult.first['count'] as int;
+    
+    // Get oldest change date
+    final oldestResult = await db.rawQuery(
+      'SELECT MIN(timestamp) as oldest FROM changes_history'
+    );
+    final oldestTimestamp = oldestResult.first['oldest'] as String?;
+    
+    return {
+      'assetsCount': assetsCount,
+      'changesCount': changesCount,
+      'oldestChange': oldestTimestamp,
+      'dataRetentionYears': 5,
+    };
   }
 
   Future close() async {

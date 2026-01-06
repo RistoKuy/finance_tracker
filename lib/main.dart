@@ -42,7 +42,8 @@ class MyApp extends StatelessWidget {
           secondary: AppConstants.accentTeal,
         ),
       ),
-      home: const MainMenu(key: AppConstants.mainMenuKey),
+      // Go directly to AssetMenu without loading screen
+      home: const AssetMenu(key: AppConstants.assetMenuKey),
       // Performance optimizations
       builder: (context, child) {
         return MediaQuery(
