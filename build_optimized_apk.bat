@@ -12,8 +12,7 @@ flutter pub get
 
 REM Build the release APK with optimization flags
 echo Building optimized release APK...
-flutter build apk --release --split-per-abi --obfuscate --split-debug-info=./debug-info
-
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=./debug-info --tree-shake-icons --no-shrink --target-platform android-arm,android-arm64,android-x64
 echo.
 echo Build completed! The optimized APK can be found in:
 echo build\app\outputs\flutter-apk\

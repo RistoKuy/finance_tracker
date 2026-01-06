@@ -9,6 +9,19 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    # Ignore deprecation warnings completely
+    deprecated_member_use: ignore
+    deprecated_member_use_from_same_package: ignore
+    # Treat missing required parameters as errors
+    missing_required_param: error
+    # Treat unused local variables as warnings
+    unused_local_variable: warning
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

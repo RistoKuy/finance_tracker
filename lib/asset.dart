@@ -1,10 +1,13 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, deprecated_member_use, unnecessary_to_list_in_spreads
+// ignore_for_file: unused_local_variable, use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'database/asset_database.dart';
 import 'history.dart';
 import 'settings.dart';
+import 'reports.dart';
 import 'constants/date_format_manager.dart';
 
 class AssetMenu extends StatefulWidget {
@@ -152,7 +155,7 @@ class _AssetMenuState extends State<AssetMenu> {
                           border: Border.all(color: Colors.grey.shade700),
                         ),
                         child: DropdownButtonFormField<String>(
-                          value: _assetType,
+                          initialValue: _assetType,
                           decoration: const InputDecoration(
                             contentPadding: EdgeInsets.symmetric(horizontal: 16),
                             border: InputBorder.none,
@@ -201,7 +204,7 @@ class _AssetMenuState extends State<AssetMenu> {
                           border: Border.all(color: Colors.grey.shade700),
                         ),
                         child: DropdownButtonFormField<String>(
-                          value: _currency,
+                          initialValue: _currency,
                           decoration: const InputDecoration(
                             contentPadding: EdgeInsets.symmetric(horizontal: 16),
                             border: InputBorder.none,
@@ -511,7 +514,7 @@ class _AssetMenuState extends State<AssetMenu> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: Colors.purple.withOpacity(0.5),
+          color: Colors.purple.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -527,7 +530,7 @@ class _AssetMenuState extends State<AssetMenu> {
                   width: 45,
                   height: 45,
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.2),
+                    color: Colors.purple.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(22.5),
                   ),
                   child: const Icon(
@@ -583,7 +586,7 @@ class _AssetMenuState extends State<AssetMenu> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -689,7 +692,7 @@ class _AssetMenuState extends State<AssetMenu> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _typeColors[type]!.withOpacity(0.1),
+                                color: _typeColors[type]!.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -704,7 +707,7 @@ class _AssetMenuState extends State<AssetMenu> {
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                     
                     // Add divider between currencies
                     if (currency != totals.keys.last)
@@ -717,7 +720,7 @@ class _AssetMenuState extends State<AssetMenu> {
                       ),
                   ],
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
@@ -919,7 +922,14 @@ class _AssetMenuState extends State<AssetMenu> {
         if (!didPop) {
           final shouldExit = await _showExitConfirmDialog();
           if (shouldExit && context.mounted) {
-            Navigator.of(context).pop();
+            // Properly exit the app
+            if (Platform.isAndroid) {
+              SystemNavigator.pop();
+            } else if (Platform.isIOS) {
+              exit(0);
+            } else {
+              exit(0);
+            }
           }
         }
       },
@@ -998,6 +1008,20 @@ class _AssetMenuState extends State<AssetMenu> {
               tooltip: 'Select multiple',
               onPressed: _toggleSelectionMode,
             ),
+          // Reports button - always visible
+          if (!_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.bar_chart),
+              tooltip: 'View reports',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReportsScreen(),
+                  ),
+                );
+              },
+            ),
           // History button - always visible
           if (!_isSelectionMode)
             IconButton(
@@ -1054,7 +1078,7 @@ class _AssetMenuState extends State<AssetMenu> {
                   ),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 80), // Add bottom padding for FAB clearance
+                  padding: const EdgeInsets.only(bottom: 120), // Add extra bottom padding for FAB clearance
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1111,7 +1135,7 @@ class _AssetMenuState extends State<AssetMenu> {
                               side: BorderSide(
                                 color: _selectedAssetIds.contains(asset['id'])
                                     ? Colors.blue
-                                    : _typeColors[asset['type']]!.withOpacity(0.5),
+                                    : _typeColors[asset['type']]!.withValues(alpha: 0.5),
                                 width: _selectedAssetIds.contains(asset['id']) ? 2 : 1,
                               ),
                             ),
@@ -1143,7 +1167,7 @@ class _AssetMenuState extends State<AssetMenu> {
                                                 shape: BoxShape.circle,
                                                 color: _selectedAssetIds.contains(asset['id'])
                                                     ? Colors.blue
-                                                    : Colors.grey.shade300.withOpacity(0.3),
+                                                    : Colors.grey.shade300.withValues(alpha: 0.3),
                                               ),
                                               child: Padding(
                                                 padding: const EdgeInsets.all(2.0),
@@ -1159,7 +1183,7 @@ class _AssetMenuState extends State<AssetMenu> {
                                           width: 40, // Smaller icon
                                           height: 40,
                                           decoration: BoxDecoration(
-                                            color: _typeColors[asset['type']]!.withOpacity(0.2),
+                                            color: _typeColors[asset['type']]!.withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Icon(
@@ -1201,7 +1225,7 @@ class _AssetMenuState extends State<AssetMenu> {
                                                       margin: const EdgeInsets.only(left: 4),
                                                       padding: const EdgeInsets.all(2),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.grey.shade800.withOpacity(0.3),
+                                                        color: Colors.grey.shade800.withValues(alpha: 0.3),
                                                         shape: BoxShape.circle,
                                                       ),
                                                       child: const Icon(
