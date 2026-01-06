@@ -18,6 +18,9 @@ analyzer:
     missing_required_param: error
     # Treat unused local variables as warnings
     unused_local_variable: warning
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
     
 linter:
   # The lint rules applied to this project can be customized in the
