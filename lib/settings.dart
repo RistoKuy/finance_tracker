@@ -30,10 +30,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    
+
     final prefs = await SharedPreferences.getInstance();
-    final savedFormat = prefs.getString('date_format') ?? AppConstants.defaultDateFormat;
-    
+    final savedFormat =
+        prefs.getString('date_format') ?? AppConstants.defaultDateFormat;
+
     setState(() {
       _selectedDateFormat = savedFormat;
       _isLoading = false;
@@ -51,10 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('date_format', format);
-      
+
       // Update the DateFormatManager
       await DateFormatManager.setFormat(format);
-      
+
       setState(() {
         _selectedDateFormat = format;
       });
@@ -63,7 +64,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Date format changed to: ${AppConstants.dateFormatLabels[format]}'),
+            content: Text(
+                'Date format changed to: ${AppConstants.dateFormatLabels[format]}'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -85,15 +87,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportData() async {
     setState(() => _isExporting = true);
-    
+
     try {
       final filePath = await StorageService.instance.exportToJson(
         includeSettings: true,
         includeHistory: true,
       );
-      
+
       await _loadExportFiles();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -134,12 +136,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
-    
+
     if (result == null || result.files.isEmpty) return;
-    
+
     final filePath = result.files.single.path;
     if (filePath == null) return;
-    
+
     // Show confirmation dialog
     final shouldReplace = await showDialog<bool>(
       context: context,
@@ -176,18 +178,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-    
+
     if (shouldReplace == null) return;
-    
+
     setState(() => _isImporting = true);
-    
+
     try {
       final data = await StorageService.instance.importFromJson(filePath);
       final importResult = await StorageService.instance.applyImport(
         data,
         replaceExisting: shouldReplace,
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -241,7 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   itemBuilder: (context, index) {
                     final file = _exportFiles[index];
                     return ListTile(
-                      leading: const Icon(Icons.description, color: Colors.green),
+                      leading:
+                          const Icon(Icons.description, color: Colors.green),
                       title: Text(
                         file.name,
                         style: const TextStyle(fontSize: 12),
@@ -253,9 +256,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: const TextStyle(fontSize: 11),
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                        icon: const Icon(Icons.delete,
+                            color: Colors.red, size: 20),
                         onPressed: () async {
-                          await StorageService.instance.deleteExportFile(file.path);
+                          await StorageService.instance
+                              .deleteExportFile(file.path);
                           await _loadExportFiles();
                           if (mounted) {
                             Navigator.pop(context);
@@ -280,7 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
-  
+
   Future<String> _getStoragePath() async {
     try {
       final dir = await StorageService.instance.getAppDataDirectory();
@@ -296,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String example,
   }) {
     final isSelected = _selectedDateFormat == format;
-    
+
     return Card(
       elevation: isSelected ? 4 : 1,
       color: isSelected ? Colors.teal.shade700 : null,
@@ -368,10 +373,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Date & Time Format',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.teal.shade700,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.teal.shade700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -381,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: TextStyle(color: Colors.grey),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Format Options
                             _buildFormatOption(
                               format: AppConstants.europeanDateFormat,
@@ -398,9 +406,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Data Management Section
                     Card(
                       child: Padding(
@@ -418,10 +426,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Data Management',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green.shade700,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green.shade700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -432,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: TextStyle(color: Colors.grey),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Export Button
                             SizedBox(
                               width: double.infinity,
@@ -448,17 +459,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.upload_file),
-                                label: Text(_isExporting ? 'Exporting...' : 'Export Data'),
+                                label: Text(_isExporting
+                                    ? 'Exporting...'
+                                    : 'Export Data'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green.shade700,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),
-                            
+
                             const SizedBox(height: 12),
-                            
+
                             // Import Button
                             SizedBox(
                               width: double.infinity,
@@ -474,26 +488,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.download),
-                                label: Text(_isImporting ? 'Importing...' : 'Import Data'),
+                                label: Text(_isImporting
+                                    ? 'Importing...'
+                                    : 'Import Data'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade700,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),
-                            
+
                             const SizedBox(height: 12),
-                            
+
                             // View Exports Button
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 onPressed: _showExportFilesDialog,
                                 icon: const Icon(Icons.folder_open),
-                                label: Text('View Export Files (${_exportFiles.length})'),
+                                label: Text(
+                                    'View Export Files (${_exportFiles.length})'),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),
@@ -501,9 +520,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Storage Location Section
                     Card(
                       child: Padding(
@@ -521,10 +540,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Storage Location',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange.shade700,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange.shade700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -544,10 +566,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade900,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.shade700),
+                                    border:
+                                        Border.all(color: Colors.grey.shade700),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Documents/FinanceTracker/',
@@ -593,9 +617,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // App Information Section
                     Card(
                       child: Padding(
@@ -613,15 +637,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'App Information',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue.shade700,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue.shade700,
+                                      ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            
                             _buildInfoRow('App Name', AppConstants.appTitle),
                             _buildInfoRow('Version', '1.1.0'),
                             _buildInfoRow('Build', '2'),

@@ -14,7 +14,8 @@ class PerformanceUtils {
   static final Map<String, NumberFormat> _numberFormatters = {};
 
   // Get or create cached currency formatter
-  static NumberFormat _getCurrencyFormatter(String currency, {int? decimalDigits}) {
+  static NumberFormat _getCurrencyFormatter(String currency,
+      {int? decimalDigits}) {
     final locale = AppConstants.currencyLocales[currency] ?? 'en_US';
     final symbol = AppConstants.currencySymbols[currency] ?? '\$';
     final key = '$currency-$locale-${decimalDigits ?? 2}';
@@ -49,14 +50,15 @@ class PerformanceUtils {
 
   // Performance-optimized number formatting with thousand separators
   static String formatNumber(double number) {
-    final formatter = _numberFormatters.putIfAbsent('number', () => NumberFormat('#,###'));
+    final formatter =
+        _numberFormatters.putIfAbsent('number', () => NumberFormat('#,###'));
     return formatter.format(number.toInt());
   }
 
   // Performance-optimized date formatting
   static String formatDateTime(String? timestamp, {String? pattern}) {
     if (timestamp == null) return 'Unknown';
-    
+
     try {
       final dateTime = DateTime.parse(timestamp);
       final dateFormat = pattern ?? DateFormatManager.currentFormat;
@@ -70,12 +72,12 @@ class PerformanceUtils {
   // Performance-optimized time ago calculation
   static String getTimeAgo(String? timestamp) {
     if (timestamp == null) return '';
-    
+
     try {
       final dateTime = DateTime.parse(timestamp);
       final now = DateTime.now();
       final difference = now.difference(dateTime);
-      
+
       if (difference.inMinutes < 1) {
         return 'Just now';
       } else if (difference.inHours < 1) {
@@ -94,15 +96,17 @@ class PerformanceUtils {
 
   // Debounce utility for text input
   static Timer? _debounceTimer;
-  static void debounce(VoidCallback callback, {Duration delay = const Duration(milliseconds: 500)}) {
+  static void debounce(VoidCallback callback,
+      {Duration delay = const Duration(milliseconds: 500)}) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(delay, callback);
   }
 
   // Memory-efficient list operations
-  static List<T> efficientWhere<T>(List<T> list, bool Function(T) test, {int? limit}) {
+  static List<T> efficientWhere<T>(List<T> list, bool Function(T) test,
+      {int? limit}) {
     if (limit == null) return list.where(test).toList();
-    
+
     final result = <T>[];
     for (final item in list) {
       if (test(item)) {

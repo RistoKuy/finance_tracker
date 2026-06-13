@@ -26,11 +26,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
   DateTime _selectedCalendarMonth = DateTime.now();
 
   // Filter options
-  final List<String> _filterOptions = ['ALL', 'CREATE', 'UPDATE', 'DELETE', 'BULK_DELETE'];
+  final List<String> _filterOptions = [
+    'ALL',
+    'CREATE',
+    'UPDATE',
+    'DELETE',
+    'BULK_DELETE'
+  ];
   final Map<String, String> _filterLabels = {
     'ALL': 'All Changes',
     'CREATE': 'Created',
-    'UPDATE': 'Updated', 
+    'UPDATE': 'Updated',
     'DELETE': 'Deleted',
     'BULK_DELETE': 'Bulk Deleted',
   };
@@ -68,12 +74,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   List<Map<String, dynamic>> get _filteredChanges {
     List<Map<String, dynamic>> filtered = _changes;
-    
+
     // Filter by change type
     if (_filterType != 'ALL') {
-      filtered = filtered.where((change) => change['change_type'] == _filterType).toList();
+      filtered = filtered
+          .where((change) => change['change_type'] == _filterType)
+          .toList();
     }
-    
+
     // Filter by specific date (takes priority over month filter)
     if (_selectedDate != null) {
       filtered = filtered.where((change) {
@@ -92,41 +100,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
         if (change['timestamp'] == null) return false;
         try {
           final changeDate = DateTime.parse(change['timestamp']);
-          final changeMonth = '${changeDate.year}-${changeDate.month.toString().padLeft(2, '0')}';
+          final changeMonth =
+              '${changeDate.year}-${changeDate.month.toString().padLeft(2, '0')}';
           return changeMonth == _selectedMonth;
         } catch (e) {
           return false;
         }
       }).toList();
     }
-    
+
     return filtered;
   }
-  
+
   // Get available months from changes data
   List<String> get _availableMonths {
     final monthsSet = <String>{};
-    
+
     for (final change in _changes) {
       if (change['timestamp'] != null) {
         try {
           final changeDate = DateTime.parse(change['timestamp']);
-          final monthKey = '${changeDate.year}-${changeDate.month.toString().padLeft(2, '0')}';
+          final monthKey =
+              '${changeDate.year}-${changeDate.month.toString().padLeft(2, '0')}';
           monthsSet.add(monthKey);
         } catch (e) {
           // Skip invalid dates
         }
       }
     }
-    
-    final monthsList = monthsSet.toList()..sort((a, b) => b.compareTo(a)); // Sort newest first
+
+    final monthsList = monthsSet.toList()
+      ..sort((a, b) => b.compareTo(a)); // Sort newest first
     return ['ALL', ...monthsList];
   }
-  
+
   // Format month for display
   String _formatMonthDisplay(String monthKey) {
     if (monthKey == 'ALL') return 'All Months';
-    
+
     try {
       final parts = monthKey.split('-');
       final year = int.parse(parts[0]);
@@ -137,19 +148,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return monthKey;
     }
   }
-  
+
   // Group changes by date for better organization
   Map<String, List<Map<String, dynamic>>> get _groupedChanges {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     final filteredChanges = _filteredChanges;
-    
+
     for (final change in filteredChanges) {
       if (change['timestamp'] == null) continue;
-      
+
       try {
         final changeDate = DateTime.parse(change['timestamp']);
         final dateKey = DateFormat('yyyy-MM-dd').format(changeDate);
-        
+
         if (!grouped.containsKey(dateKey)) {
           grouped[dateKey] = [];
         }
@@ -158,38 +169,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
         // Skip invalid dates
       }
     }
-    
+
     // Sort groups by date (newest first)
     final sortedEntries = grouped.entries.toList()
       ..sort((a, b) => b.key.compareTo(a.key));
-    
+
     return Map.fromEntries(sortedEntries);
   }
-  
+
   // Get all dates that have changes (for calendar markers)
   Set<DateTime> get _datesWithChanges {
     final dates = <DateTime>{};
-    
+
     for (final change in _changes) {
       if (change['timestamp'] != null) {
         try {
           final changeDate = DateTime.parse(change['timestamp']);
           // Normalize to date only (remove time)
-          final normalizedDate = DateTime(changeDate.year, changeDate.month, changeDate.day);
+          final normalizedDate =
+              DateTime(changeDate.year, changeDate.month, changeDate.day);
           dates.add(normalizedDate);
         } catch (e) {
           // Skip invalid dates
         }
       }
     }
-    
+
     return dates;
   }
-  
+
   // Get changes count for a specific date
   int _getChangesCountForDate(DateTime date) {
     int count = 0;
-    
+
     for (final change in _changes) {
       if (change['timestamp'] != null) {
         try {
@@ -202,14 +214,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
       }
     }
-    
+
     return count;
   }
-  
+
   // Get change types for a specific date (for visual indicators)
   Set<String> _getChangeTypesForDate(DateTime date) {
     final types = <String>{};
-    
+
     for (final change in _changes) {
       if (change['timestamp'] != null) {
         try {
@@ -222,7 +234,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
       }
     }
-    
+
     return types;
   }
 
@@ -233,22 +245,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('Filter Changes'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: _filterOptions.map((option) => 
-            RadioListTile<String>(
-              title: Text(_filterLabels[option]!),
-              value: option,
-              groupValue: _filterType,
-              onChanged: (value) {
-                setState(() {
-                  _filterType = value!;
-                  // Exit selection mode when filter changes
-                  _isSelectionMode = false;
-                  _selectedChangeIds.clear();
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ).toList(),
+          children: _filterOptions
+              .map(
+                (option) => RadioListTile<String>(
+                  title: Text(_filterLabels[option]!),
+                  value: option,
+                  groupValue: _filterType,
+                  onChanged: (value) {
+                    setState(() {
+                      _filterType = value!;
+                      // Exit selection mode when filter changes
+                      _isSelectionMode = false;
+                      _selectedChangeIds.clear();
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              )
+              .toList(),
         ),
         actions: [
           TextButton(
@@ -259,10 +273,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-  
+
   void _showMonthFilterDialog() {
     final availableMonths = _availableMonths;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -302,7 +316,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-  
+
   void _showCalendarDialog() {
     showDialog(
       context: context,
@@ -316,8 +330,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Text(
                 'Select Date',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -350,7 +364,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-  
+
   Widget _buildCalendar() {
     return StatefulBuilder(
       builder: (context, setCalendarState) {
@@ -374,8 +388,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      final monthKey = '${_selectedCalendarMonth.year}-${_selectedCalendarMonth.month.toString().padLeft(2, '0')}';
-                      
+                      final monthKey =
+                          '${_selectedCalendarMonth.year}-${_selectedCalendarMonth.month.toString().padLeft(2, '0')}';
+
                       if (_isCurrentMonthSelected()) {
                         // Clear the month filter if it's already selected
                         setState(() {
@@ -385,10 +400,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           _selectedChangeIds.clear();
                         });
                         Navigator.pop(context);
-                        
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Month filter cleared - showing all changes'),
+                            content: Text(
+                                'Month filter cleared - showing all changes'),
                             backgroundColor: Colors.orange,
                             duration: Duration(seconds: 2),
                           ),
@@ -402,11 +418,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           _selectedChangeIds.clear();
                         });
                         Navigator.pop(context); // Close calendar dialog
-                        
+
                         // Show confirmation message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Filtered by ${DateFormat(DateFormatManager.monthYearFormat).format(_selectedCalendarMonth)}'),
+                            content: Text(
+                                'Filtered by ${DateFormat(DateFormatManager.monthYearFormat).format(_selectedCalendarMonth)}'),
                             backgroundColor: Colors.green,
                             duration: const Duration(seconds: 2),
                           ),
@@ -414,9 +431,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: _isCurrentMonthSelected() 
+                        color: _isCurrentMonthSelected()
                             ? Colors.green.withValues(alpha: 0.2)
                             : Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -441,19 +459,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 const SizedBox(width: 4),
                               ],
                               Text(
-                                DateFormat(DateFormatManager.monthYearFormat).format(_selectedCalendarMonth),
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: _isCurrentMonthSelected()
-                                      ? Colors.green.shade700
-                                      : Colors.blue.shade700,
-                                ),
+                                DateFormat(DateFormatManager.monthYearFormat)
+                                    .format(_selectedCalendarMonth),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: _isCurrentMonthSelected()
+                                          ? Colors.green.shade700
+                                          : Colors.blue.shade700,
+                                    ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            _isCurrentMonthSelected() 
+                            _isCurrentMonthSelected()
                                 ? 'Currently filtered by this month'
                                 : 'Tap to filter by this month',
                             style: TextStyle(
@@ -482,7 +504,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Calendar grid
             Expanded(
               child: _buildCalendarGrid(setCalendarState),
@@ -492,14 +514,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       },
     );
   }
-  
+
   Widget _buildCalendarGrid(StateSetter setCalendarState) {
-    final firstDayOfMonth = DateTime(_selectedCalendarMonth.year, _selectedCalendarMonth.month, 1);
+    final firstDayOfMonth =
+        DateTime(_selectedCalendarMonth.year, _selectedCalendarMonth.month, 1);
     final firstDayWeekday = firstDayOfMonth.weekday;
-    
+
     // Calculate days to show (including previous and next month days)
-    final startDate = firstDayOfMonth.subtract(Duration(days: firstDayWeekday - 1));
-    
+    final startDate =
+        firstDayOfMonth.subtract(Duration(days: firstDayWeekday - 1));
+
     return Column(
       children: [
         // Weekday headers
@@ -519,7 +543,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               .toList(),
         ),
         const SizedBox(height: 8),
-        
+
         // Calendar days
         Expanded(
           child: GridView.builder(
@@ -532,17 +556,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
               final date = startDate.add(Duration(days: index));
               final isCurrentMonth = date.month == _selectedCalendarMonth.month;
               final isToday = DateUtils.isSameDay(date, DateTime.now());
-              final isSelected = _selectedDate != null && DateUtils.isSameDay(date, _selectedDate!);
+              final isSelected = _selectedDate != null &&
+                  DateUtils.isSameDay(date, _selectedDate!);
               final hasChanges = _getChangesCountForDate(date) > 0;
               final changesCount = _getChangesCountForDate(date);
               final changeTypes = _getChangeTypesForDate(date);
-              
+
               return GestureDetector(
                 onTap: () {
                   setCalendarState(() {
                     setState(() {
                       _selectedDate = isSelected ? null : date;
-                      _selectedMonth = 'ALL'; // Clear month filter when selecting specific date
+                      _selectedMonth =
+                          'ALL'; // Clear month filter when selecting specific date
                       _isSelectionMode = false;
                       _selectedChangeIds.clear();
                     });
@@ -554,7 +580,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary
                         : isToday
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3)
                             : null,
                     border: isToday && !isSelected
                         ? Border.all(
@@ -570,7 +599,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         child: Text(
                           '${date.day}',
                           style: TextStyle(
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            fontWeight:
+                                isToday ? FontWeight.bold : FontWeight.normal,
                             color: isSelected
                                 ? Colors.white
                                 : isCurrentMonth
@@ -579,7 +609,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                       ),
-                      
+
                       // Changes indicator
                       if (hasChanges) ...[
                         Positioned(
@@ -615,7 +645,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ],
     );
   }
-  
+
   Color _getIndicatorColor(Set<String> changeTypes) {
     if (changeTypes.contains('DELETE') || changeTypes.contains('BULK_DELETE')) {
       return Colors.red;
@@ -627,12 +657,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return Colors.orange;
     }
   }
-  
+
   // Check if the currently displayed calendar month is the selected filter month
   bool _isCurrentMonthSelected() {
     if (_selectedMonth == 'ALL') return false;
-    
-    final calendarMonthKey = '${_selectedCalendarMonth.year}-${_selectedCalendarMonth.month.toString().padLeft(2, '0')}';
+
+    final calendarMonthKey =
+        '${_selectedCalendarMonth.year}-${_selectedCalendarMonth.month.toString().padLeft(2, '0')}';
     return _selectedMonth == calendarMonthKey;
   }
 
@@ -652,7 +683,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       } else {
         _selectedChangeIds.add(changeId);
       }
-      
+
       // If no items selected, exit selection mode
       if (_selectedChangeIds.isEmpty && _isSelectionMode) {
         _isSelectionMode = false;
@@ -663,8 +694,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _selectAllChanges() {
     setState(() {
       final filteredChanges = _filteredChanges;
-      final visibleChangeIds = filteredChanges.map((change) => change['id'] as int).toSet();
-      
+      final visibleChangeIds =
+          filteredChanges.map((change) => change['id'] as int).toSet();
+
       if (_selectedChangeIds.containsAll(visibleChangeIds)) {
         // If all visible are selected, deselect them
         _selectedChangeIds.removeAll(visibleChangeIds);
@@ -677,7 +709,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _deleteSelectedChanges() {
     if (_selectedChangeIds.isEmpty) return;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -695,18 +727,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () async {
               final selectedCount = _selectedChangeIds.length;
               // Delete all selected changes
-              await AssetDatabase.instance.deleteMultipleChanges(_selectedChangeIds.toList());
-              
+              await AssetDatabase.instance
+                  .deleteMultipleChanges(_selectedChangeIds.toList());
+
               // Refresh the list and exit selection mode
               await _refreshChanges();
               setState(() {
                 _isSelectionMode = false;
                 _selectedChangeIds.clear();
               });
-              
+
               if (context.mounted) {
                 Navigator.pop(context);
-                
+
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -729,7 +762,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete this change record?\n\n"${change['description']}"\n\nThis action cannot be undone.'),
+        content: Text(
+            'Are you sure you want to delete this change record?\n\n"${change['description']}"\n\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -740,10 +774,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () async {
               await AssetDatabase.instance.deleteChangeRecord(change['id']);
               await _refreshChanges();
-              
+
               if (context.mounted) {
                 Navigator.pop(context);
-                
+
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -774,12 +808,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
               if (change['asset_type'] != null)
                 _buildDetailRow('Asset Type', change['asset_type']),
               if (change['old_value'] != null)
-                _buildDetailRow('Previous Value', _formatCurrency(change['old_value'], change['currency'])),
+                _buildDetailRow('Previous Value',
+                    _formatCurrency(change['old_value'], change['currency'])),
               if (change['new_value'] != null)
-                _buildDetailRow('New Value', _formatCurrency(change['new_value'], change['currency'])),
+                _buildDetailRow('New Value',
+                    _formatCurrency(change['new_value'], change['currency'])),
               _buildDetailRow('Currency', change['currency']),
               _buildDetailRow('Description', change['description']),
-              _buildDetailRow('Date & Time', _formatDateTime(change['timestamp'])),
+              _buildDetailRow(
+                  'Date & Time', _formatDateTime(change['timestamp'])),
             ],
           ),
         ),
@@ -795,7 +832,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildDetailRow(String label, String? value) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -824,24 +861,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _formatCurrency(double? amount, String? currency) {
     if (amount == null || currency == null) return 'N/A';
-    
+
     final Map<String, String> currencySymbols = {
       'USD': '\$',
       'EUR': '€',
       'JPY': '¥',
       'IDR': 'Rp',
     };
-    
+
     final Map<String, String> currencyLocales = {
       'USD': 'en_US',
-      'EUR': 'de_DE', 
+      'EUR': 'de_DE',
       'JPY': 'ja_JP',
       'IDR': 'id_ID',
     };
-    
+
     final locale = currencyLocales[currency] ?? 'en_US';
     final symbol = currencySymbols[currency] ?? '\$';
-    
+
     if (currency == 'IDR' || currency == 'JPY') {
       return NumberFormat.currency(
         locale: locale,
@@ -858,7 +895,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _formatDateTime(String? timestamp) {
     if (timestamp == null) return 'Unknown';
-    
+
     try {
       final dateTime = DateTime.parse(timestamp);
       return DateFormat(DateFormatManager.currentFormat).format(dateTime);
@@ -869,12 +906,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _getTimeAgo(String? timestamp) {
     if (timestamp == null) return '';
-    
+
     try {
       final dateTime = DateTime.parse(timestamp);
       final now = DateTime.now();
       final difference = now.difference(dateTime);
-      
+
       if (difference.inMinutes < 1) {
         return 'Just now';
       } else if (difference.inHours < 1) {
@@ -893,19 +930,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildGroupedChangesList() {
     final groupedChanges = _groupedChanges;
-    
+
     if (groupedChanges.isEmpty) {
       return const Center(
         child: Text('No changes found for the selected filters.'),
       );
     }
-    
+
     return ListView.builder(
       itemCount: groupedChanges.length,
       itemBuilder: (context, groupIndex) {
         final dateKey = groupedChanges.keys.elementAt(groupIndex);
         final dayChanges = groupedChanges[dateKey]!;
-        
+
         // Format the date for display
         String displayDate;
         try {
@@ -913,18 +950,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
           final changeDate = DateTime(date.year, date.month, date.day);
-          
+
           if (changeDate == today) {
             displayDate = 'Today';
           } else if (changeDate == today.subtract(const Duration(days: 1))) {
             displayDate = 'Yesterday';
           } else {
-            displayDate = DateFormat(DateFormatManager.weekdayDateFormat).format(date);
+            displayDate =
+                DateFormat(DateFormatManager.weekdayDateFormat).format(date);
           }
         } catch (e) {
           displayDate = dateKey;
         }
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -936,15 +974,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   Text(
                     displayDate,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -959,17 +1001,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
-            
+
             // Changes for this day
             ...dayChanges.map((change) {
               final changeId = change['id'] as int;
               final isSelected = _selectedChangeIds.contains(changeId);
-              
+
               return Card(
                 margin: const EdgeInsets.fromLTRB(8, 2, 8, 2),
                 elevation: isSelected ? 4 : 1,
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                color: isSelected
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1)
                     : null,
                 child: ListTile(
                   leading: _isSelectionMode
@@ -981,7 +1026,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: _changeColors[change['change_type']]?.withValues(alpha: 0.2),
+                            color: _changeColors[change['change_type']]
+                                ?.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
@@ -1043,11 +1089,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 children: [
                                   Icon(Icons.delete, color: Colors.red),
                                   SizedBox(width: 8),
-                                  Text('Delete', 
+                                  Text('Delete',
                                       style: TextStyle(color: Colors.red)),
                                 ],
                               ),
-                              onTap: () => _deleteIndividualChangeByObject(change),
+                              onTap: () =>
+                                  _deleteIndividualChangeByObject(change),
                             ),
                           ],
                         ),
@@ -1063,14 +1110,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               );
             }),
-            
+
             const SizedBox(height: 8), // Spacing between date groups
           ],
         );
       },
     );
   }
-  
+
   String _getNoChangesTitle() {
     if (_selectedDate != null) {
       if (_filterType != 'ALL') {
@@ -1088,9 +1135,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return 'No changes recorded yet';
     }
   }
-  
+
   String _getNoChangesSubtitle() {
-    if (_selectedDate != null || _filterType != 'ALL' || _selectedMonth != 'ALL') {
+    if (_selectedDate != null ||
+        _filterType != 'ALL' ||
+        _selectedMonth != 'ALL') {
       return 'Try changing the filters or create some assets to see changes';
     } else {
       return 'Asset changes will appear here as you create, edit, or delete assets';
@@ -1100,10 +1149,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredChanges = _filteredChanges;
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: _isSelectionMode 
+        title: _isSelectionMode
             ? Text('${_selectedChangeIds.length} selected')
             : const Text('Changes History'),
         leading: _isSelectionMode
@@ -1121,12 +1170,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       PopupMenuItem(
                         child: Row(
                           children: [
-                            Icon(_selectedChangeIds.length == filteredChanges.length 
-                                ? Icons.deselect 
+                            Icon(_selectedChangeIds.length ==
+                                    filteredChanges.length
+                                ? Icons.deselect
                                 : Icons.select_all),
                             const SizedBox(width: 8),
-                            Text(_selectedChangeIds.length == filteredChanges.length 
-                                ? 'Deselect All' 
+                            Text(_selectedChangeIds.length ==
+                                    filteredChanges.length
+                                ? 'Deselect All'
                                 : 'Select All'),
                           ],
                         ),
@@ -1138,7 +1189,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             children: [
                               Icon(Icons.delete, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('Delete Selected', 
+                              Text('Delete Selected',
                                   style: TextStyle(color: Colors.red)),
                             ],
                           ),
@@ -1198,16 +1249,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Text(
                         _getNoChangesTitle(),
                         style: const TextStyle(
-                          fontSize: 18, 
-                          fontWeight: FontWeight.bold
-                        ),
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _getNoChangesSubtitle(),
                         textAlign: TextAlign.center,
                       ),
-                      if (_filterType != 'ALL' || _selectedMonth != 'ALL' || _selectedDate != null) ...[
+                      if (_filterType != 'ALL' ||
+                          _selectedMonth != 'ALL' ||
+                          _selectedDate != null) ...[
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () {
@@ -1227,7 +1278,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               : Column(
                   children: [
                     // Filter indicators
-                    if (_filterType != 'ALL' || _selectedMonth != 'ALL' || _selectedDate != null)
+                    if (_filterType != 'ALL' ||
+                        _selectedMonth != 'ALL' ||
+                        _selectedDate != null)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(8),
@@ -1315,7 +1368,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ),
                                 ],
                               ),
-                            if (_filterType != 'ALL' || _selectedMonth != 'ALL' || _selectedDate != null)
+                            if (_filterType != 'ALL' ||
+                                _selectedMonth != 'ALL' ||
+                                _selectedDate != null)
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -1335,7 +1390,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ],
                         ),
                       ),
-                    
+
                     // Changes list - grouped by date
                     Expanded(
                       child: _buildGroupedChangesList(),

@@ -19,10 +19,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   String? _selectedCurrency; // null = show all, otherwise filter by currency
   List<Map<String, dynamic>> _assets = [];
   List<Map<String, dynamic>> _changes = [];
-  
+
   // Processed data for charts
   final Map<String, List<TotalAssetSnapshot>> _snapshotsByCurrency = {};
-  
+
   // Available currencies (only those with assets)
   List<String> get _availableCurrencies {
     final currencies = <String>{};
@@ -32,7 +32,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final list = currencies.toList()..sort();
     return list;
   }
-  
+
   // Filtered snapshots based on selected currency
   Map<String, List<TotalAssetSnapshot>> get _filteredSnapshots {
     if (_selectedCurrency == null) {
@@ -43,19 +43,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
         _selectedCurrency!: _snapshotsByCurrency[_selectedCurrency]!,
     };
   }
-  
+
   @override
   void initState() {
     super.initState();
     _loadData();
   }
-  
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     final assets = await AssetDatabase.instance.readAllAssets();
     final changes = await AssetDatabase.instance.readAllChanges();
-    
+
     setState(() {
       _assets = assets;
       _changes = changes;
@@ -63,10 +63,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _isLoading = false;
     });
   }
-  
+
   void _processSnapshots() {
     _snapshotsByCurrency.clear();
-    
+
     // Get all unique currencies
     final currencies = <String>{};
     for (final asset in _assets) {
@@ -75,7 +75,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     for (final change in _changes) {
       currencies.add(change['currency'] as String);
     }
-    
+
     // Process snapshots for each currency
     for (final currency in currencies) {
       final snapshots = _calculateSnapshots(currency);
@@ -84,15 +84,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
       }
     }
   }
-  
+
   List<TotalAssetSnapshot> _calculateSnapshots(String currency) {
     final snapshots = <TotalAssetSnapshot>[];
-    
+
     // Get changes for this currency, sorted by date
-    final currencyChanges = _changes
-        .where((c) => c['currency'] == currency)
-        .toList();
-    
+    final currencyChanges =
+        _changes.where((c) => c['currency'] == currency).toList();
+
     if (currencyChanges.isEmpty) {
       // If no changes, create a snapshot from current assets
       double total = 0;
@@ -101,7 +100,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           total += (asset['nominal'] as num).toDouble();
         }
       }
-      
+
       if (total > 0) {
         final now = DateTime.now();
         snapshots.add(TotalAssetSnapshot(
@@ -112,48 +111,48 @@ class _ReportsScreenState extends State<ReportsScreen> {
       }
       return snapshots;
     }
-    
+
     // Sort changes by timestamp
     currencyChanges.sort((a, b) {
       final aDate = DateTime.parse(a['timestamp'] as String);
       final bDate = DateTime.parse(b['timestamp'] as String);
       return aDate.compareTo(bDate);
     });
-    
+
     // Group changes by month or year
     final groupedSnapshots = <String, double>{};
-    
+
     // Start with current total and work backwards, or calculate running total
     double runningTotal = 0;
-    
+
     // Calculate current total for this currency
     for (final asset in _assets) {
       if (asset['currency'] == currency) {
         runningTotal += (asset['nominal'] as num).toDouble();
       }
     }
-    
+
     // Add current month snapshot
     final now = DateTime.now();
-    final currentKey = _showMonthly 
+    final currentKey = _showMonthly
         ? '${now.year}-${now.month.toString().padLeft(2, '0')}'
         : '${now.year}';
     groupedSnapshots[currentKey] = runningTotal;
-    
+
     // Process changes in reverse to reconstruct historical totals
     final reversedChanges = currencyChanges.reversed.toList();
     double historicalTotal = runningTotal;
-    
+
     for (final change in reversedChanges) {
       final timestamp = DateTime.parse(change['timestamp'] as String);
-      final key = _showMonthly 
+      final key = _showMonthly
           ? '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}'
           : '${timestamp.year}';
-      
+
       final changeType = change['change_type'] as String;
       final oldValue = (change['old_value'] as num?)?.toDouble() ?? 0;
       final newValue = (change['new_value'] as num?)?.toDouble() ?? 0;
-      
+
       // Reverse the change to get previous state
       switch (changeType) {
         case 'CREATE':
@@ -167,14 +166,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
           historicalTotal = historicalTotal - newValue + oldValue;
           break;
       }
-      
+
       // Store the snapshot for this period (last value wins)
-      if (!groupedSnapshots.containsKey(key) || 
+      if (!groupedSnapshots.containsKey(key) ||
           _parseDate(key).isBefore(_parseDate(currentKey))) {
         groupedSnapshots[key] = historicalTotal > 0 ? historicalTotal : 0;
       }
     }
-    
+
     // Convert to list and sort
     for (final entry in groupedSnapshots.entries) {
       snapshots.add(TotalAssetSnapshot(
@@ -183,25 +182,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
         currency: currency,
       ));
     }
-    
+
     snapshots.sort((a, b) => a.date.compareTo(b.date));
-    
+
     // Keep only last 12 months or 5 years
     final maxItems = _showMonthly ? 12 : 5;
     if (snapshots.length > maxItems) {
       return snapshots.sublist(snapshots.length - maxItems);
     }
-    
+
     return snapshots;
   }
-  
+
   DateTime _parseDate(String key) {
     final parts = key.split('-');
     final year = int.parse(parts[0]);
     final month = parts.length > 1 ? int.parse(parts[1]) : 1;
     return DateTime(year, month);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -236,11 +235,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         // Toggle button for monthly/yearly
                         _buildToggleButton(),
                         const SizedBox(height: 16),
-                        
+
                         // Currency filter
                         _buildCurrencyFilter(),
                         const SizedBox(height: 24),
-                        
+
                         // Charts for filtered currencies
                         ..._filteredSnapshots.entries.map((entry) {
                           return Column(
@@ -250,7 +249,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ],
                           );
                         }),
-                        
+
                         // Snapshots list
                         _buildSnapshotsList(),
                       ],
@@ -259,7 +258,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -281,7 +280,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
+
   Widget _buildToggleButton() {
     return Card(
       child: Padding(
@@ -318,18 +317,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
+
   Widget _buildCurrencyFilter() {
     final currencies = _availableCurrencies;
     if (currencies.isEmpty) return const SizedBox.shrink();
-    
+
     final currencySymbols = {
       'USD': '\$',
       'EUR': '€',
       'JPY': '¥',
       'IDR': 'Rp',
     };
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -338,9 +337,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.filter_list, color: Colors.indigo.shade600, size: 20),
+                Icon(Icons.filter_list,
+                    color: Colors.indigo.shade600, size: 20),
                 const SizedBox(width: 8),
-                const Text('Currency: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Currency: ',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 12),
@@ -360,7 +361,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   selectedColor: Colors.indigo.shade600,
                   labelStyle: TextStyle(
                     color: _selectedCurrency == null ? Colors.white : null,
-                    fontWeight: _selectedCurrency == null ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: _selectedCurrency == null
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
                 // Currency options
@@ -378,7 +381,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     selectedColor: Colors.indigo.shade600,
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : null,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   );
                 }),
@@ -389,29 +393,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
-  Widget _buildCurrencyChart(String currency, List<TotalAssetSnapshot> snapshots) {
+
+  Widget _buildCurrencyChart(
+      String currency, List<TotalAssetSnapshot> snapshots) {
     if (snapshots.isEmpty) return const SizedBox.shrink();
-    
+
     final currencySymbols = {
       'USD': '\$',
       'EUR': '€',
       'JPY': '¥',
       'IDR': 'Rp',
     };
-    
+
     final symbol = currencySymbols[currency] ?? '\$';
-    
+
     // Find max value for scaling
-    double maxValue = snapshots.map((s) => s.total).reduce((a, b) => a > b ? a : b);
+    double maxValue =
+        snapshots.map((s) => s.total).reduce((a, b) => a > b ? a : b);
     if (maxValue == 0) maxValue = 100;
-    
+
     // Create line chart data
     final spots = <FlSpot>[];
     for (var i = 0; i < snapshots.length; i++) {
       spots.add(FlSpot(i.toDouble(), snapshots[i].total));
     }
-    
+
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(
@@ -426,7 +432,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.indigo.shade100,
                     borderRadius: BorderRadius.circular(8),
@@ -451,7 +458,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Chart
             SizedBox(
               height: 250,
@@ -460,7 +467,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.grey.shade400, size: 48),
+                          Icon(Icons.info_outline,
+                              color: Colors.grey.shade400, size: 48),
                           const SizedBox(height: 8),
                           Text(
                             'Need at least 2 data points for chart',
@@ -492,8 +500,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                         titlesData: FlTitlesData(
                           show: true,
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
@@ -569,13 +579,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ],
                         lineTouchData: LineTouchData(
                           touchTooltipData: LineTouchTooltipData(
-                            getTooltipColor: (touchedSpot) => Colors.indigo.shade800,
+                            getTooltipColor: (touchedSpot) =>
+                                Colors.indigo.shade800,
                             getTooltipItems: (touchedSpots) {
                               return touchedSpots.map((spot) {
                                 final index = spot.x.toInt();
                                 final snapshot = snapshots[index];
                                 final dateLabel = _showMonthly
-                                    ? DateFormat('MMM yyyy').format(snapshot.date)
+                                    ? DateFormat('MMM yyyy')
+                                        .format(snapshot.date)
                                     : '${snapshot.date.year}';
                                 return LineTooltipItem(
                                   '$dateLabel\n$symbol${_formatNumber(spot.y)}',
@@ -596,7 +608,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
+
   Widget _buildSnapshotsList() {
     final currencySymbols = {
       'USD': '\$',
@@ -604,7 +616,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'JPY': '¥',
       'IDR': 'Rp',
     };
-    
+
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(
@@ -635,7 +647,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             const SizedBox(height: 16),
             const Divider(),
-            
             if (_snapshotsByCurrency.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
@@ -646,13 +657,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 final currency = entry.key;
                 final snapshots = entry.value;
                 final symbol = currencySymbols[currency] ?? '\$';
-                
+
                 // Reverse to show newest first
                 final reversedSnapshots = snapshots.reversed.toList();
-                
+
                 return [
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     margin: const EdgeInsets.only(top: 8),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
@@ -668,9 +680,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   ...reversedSnapshots.map((snapshot) {
                     final dateLabel = _showMonthly
-                        ? DateFormat(DateFormatManager.monthYearFormat).format(snapshot.date)
+                        ? DateFormat(DateFormatManager.monthYearFormat)
+                            .format(snapshot.date)
                         : '${snapshot.date.year}';
-                    
+
                     return ListTile(
                       dense: true,
                       leading: Container(
@@ -681,7 +694,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          _showMonthly ? Icons.calendar_month : Icons.calendar_today,
+                          _showMonthly
+                              ? Icons.calendar_month
+                              : Icons.calendar_today,
                           color: Colors.indigo.shade600,
                           size: 20,
                         ),
@@ -707,7 +722,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
   }
-  
+
   String _formatNumber(double value) {
     if (value >= 1000000000) {
       return '${(value / 1000000000).toStringAsFixed(2)}B';
@@ -718,7 +733,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
     return value.toStringAsFixed(2);
   }
-  
+
   String _formatCompactNumber(double value) {
     if (value >= 1000000000) {
       return '${(value / 1000000000).toStringAsFixed(1)}B';
@@ -736,7 +751,7 @@ class TotalAssetSnapshot {
   final DateTime date;
   final double total;
   final String currency;
-  
+
   TotalAssetSnapshot({
     required this.date,
     required this.total,

@@ -10,19 +10,19 @@ import 'utils/performance_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize performance monitoring
   PerformanceManager.initialize();
-  
+
   // Initialize date format manager
   await DateFormatManager.initialize();
-  
+
   // Performance optimizations
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  
+
   // Initialize the database when the app starts
   await AssetDatabase.instance.database;
-  
+
   runApp(const MyApp());
 }
 
@@ -47,7 +47,8 @@ class MyApp extends StatelessWidget {
       // Performance optimizations
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(1.0)),
           child: child!,
         );
       },
@@ -71,7 +72,9 @@ class _MainMenuState extends State<MainMenu> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const AssetMenu(key: AppConstants.assetMenuKey)),
+          MaterialPageRoute(
+              builder: (context) =>
+                  const AssetMenu(key: AppConstants.assetMenuKey)),
         );
       }
     });
@@ -80,41 +83,42 @@ class _MainMenuState extends State<MainMenu> {
   // Function to show exit confirmation dialog
   Future<bool> _showExitConfirmDialog() async {
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            AppWidgets.warningIcon,
-            AppWidgets.smallHorizontalSpacing,
-            Text(AppConstants.exitConfirmTitle),
-          ],
-        ),
-        content: const Text(
-          AppConstants.exitConfirmMessage,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(
-              'Cancel',
-              style: AppConstants.boldTextStyle,
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                AppWidgets.warningIcon,
+                AppWidgets.smallHorizontalSpacing,
+                Text(AppConstants.exitConfirmTitle),
+              ],
             ),
+            content: const Text(
+              AppConstants.exitConfirmMessage,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: AppConstants.boldTextStyle,
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.redDanger,
+                  foregroundColor: AppConstants.whiteColor,
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  'Exit',
+                  style: AppConstants.boldTextStyle,
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.redDanger,
-              foregroundColor: AppConstants.whiteColor,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Exit',
-              style: AppConstants.boldTextStyle,
-            ),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   @override
@@ -130,22 +134,22 @@ class _MainMenuState extends State<MainMenu> {
         }
       },
       child: Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppWidgets.appIcon,
-            AppWidgets.largeSpacing,
-            Text(
-              AppConstants.appTitle,
-              style: AppConstants.appTitleStyle,
-            ),
-            AppWidgets.extraLargeSpacing,
-            AppWidgets.loadingIndicator,
-          ],
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AppWidgets.appIcon,
+              AppWidgets.largeSpacing,
+              Text(
+                AppConstants.appTitle,
+                style: AppConstants.appTitleStyle,
+              ),
+              AppWidgets.extraLargeSpacing,
+              AppWidgets.loadingIndicator,
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

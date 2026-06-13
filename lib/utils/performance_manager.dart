@@ -10,25 +10,25 @@ import '../constants/performance_utils.dart';
 
 class PerformanceManager {
   PerformanceManager._();
-  
+
   static bool _isInitialized = false;
   static Timer? _memoryCleanupTimer;
-  
+
   // Initialize performance monitoring
   static void initialize() {
     if (_isInitialized) return;
-    
+
     // Start periodic memory cleanup
     _startPeriodicCleanup();
-    
+
     // Monitor frame performance in debug mode
     if (kDebugMode) {
       _startFrameMonitoring();
     }
-    
+
     _isInitialized = true;
   }
-  
+
   // Start periodic memory cleanup
   static void _startPeriodicCleanup() {
     _memoryCleanupTimer = Timer.periodic(
@@ -36,14 +36,15 @@ class PerformanceManager {
       (timer) => cleanupMemory(),
     );
   }
-  
+
   // Monitor frame performance
   static void _startFrameMonitoring() {
     if (kDebugMode) {
       WidgetsBinding.instance.addTimingsCallback((timings) {
         for (final timing in timings) {
           final frameDuration = timing.totalSpan.inMilliseconds;
-          if (frameDuration > 16) { // More than 16ms indicates dropped frames
+          if (frameDuration > 16) {
+            // More than 16ms indicates dropped frames
             developer.log(
               'Frame took ${frameDuration}ms (dropped frames detected)',
               name: 'PerformanceMonitor',
@@ -53,21 +54,21 @@ class PerformanceManager {
       });
     }
   }
-  
+
   // Clean up memory periodically
   static void cleanupMemory() {
     // Clear cached formatters
     PerformanceUtils.clearFormatterCache();
-    
+
     // Force garbage collection in debug mode
     if (kDebugMode) {
       developer.log('Memory cleanup performed', name: 'PerformanceManager');
     }
-    
+
     // Clear system memory if needed
     SystemChannels.platform.invokeMethod('SystemNavigator.pop');
   }
-  
+
   // Log performance metrics
   static void logPerformance(String operation, Duration duration) {
     if (kDebugMode) {
@@ -77,7 +78,7 @@ class PerformanceManager {
       );
     }
   }
-  
+
   // Track database operations performance
   static Future<T> trackDatabaseOperation<T>(
     String operationName,
@@ -98,7 +99,7 @@ class PerformanceManager {
       rethrow;
     }
   }
-  
+
   // Track UI operations performance
   static T trackUIOperation<T>(
     String operationName,
@@ -119,7 +120,7 @@ class PerformanceManager {
       rethrow;
     }
   }
-  
+
   // Dispose resources
   static void dispose() {
     _memoryCleanupTimer?.cancel();
@@ -127,21 +128,21 @@ class PerformanceManager {
     _isInitialized = false;
     cleanupMemory();
   }
-  
+
   // Check if device has low memory
   static bool isLowMemoryDevice() {
     // This is a simplified check - in a real app you'd use platform channels
     // to check actual memory usage
     return false; // Default to false for now
   }
-  
+
   // Optimize for low memory devices
   static void optimizeForLowMemory() {
     if (isLowMemoryDevice()) {
       // Reduce image cache size
       PaintingBinding.instance.imageCache.maximumSize = 50;
       PaintingBinding.instance.imageCache.maximumSizeBytes = 10 << 20; // 10 MB
-      
+
       // Clear caches more frequently
       _memoryCleanupTimer?.cancel();
       _memoryCleanupTimer = Timer.periodic(
@@ -158,7 +159,7 @@ mixin PerformanceAware<T extends StatefulWidget> on State<T> {
   void initState() {
     super.initState();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return PerformanceManager.trackUIOperation(
@@ -166,10 +167,10 @@ mixin PerformanceAware<T extends StatefulWidget> on State<T> {
       () => buildWidget(context),
     );
   }
-  
+
   // Override this method instead of build
   Widget buildWidget(BuildContext context);
-  
+
   @override
   void dispose() {
     super.dispose();
@@ -185,7 +186,7 @@ mixin PerformanceAware<T extends StatefulWidget> on State<T> {
 // Performance-aware StatelessWidget
 abstract class PerformanceAwareStatelessWidget extends StatelessWidget {
   const PerformanceAwareStatelessWidget({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return PerformanceManager.trackUIOperation(
@@ -193,7 +194,7 @@ abstract class PerformanceAwareStatelessWidget extends StatelessWidget {
       () => buildWidget(context),
     );
   }
-  
+
   // Override this method instead of build
   Widget buildWidget(BuildContext context);
 }

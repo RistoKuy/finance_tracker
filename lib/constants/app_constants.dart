@@ -40,8 +40,10 @@ class AppConstants {
   // Padding and Margins - const for performance
   static const EdgeInsets standardPadding = EdgeInsets.all(16.0);
   static const EdgeInsets smallPadding = EdgeInsets.all(8.0);
-  static const EdgeInsets dialogPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 15);
-  static const EdgeInsets listItemPadding = EdgeInsets.symmetric(horizontal: 16, vertical: 10);
+  static const EdgeInsets dialogPadding =
+      EdgeInsets.symmetric(horizontal: 12, vertical: 15);
+  static const EdgeInsets listItemPadding =
+      EdgeInsets.symmetric(horizontal: 16, vertical: 10);
   static const EdgeInsets bottomPadding = EdgeInsets.only(bottom: 80);
 
   // Sizes - const for performance
@@ -100,10 +102,16 @@ class AppConstants {
   // Durations - const for performance
   static const Duration splashDuration = Duration(seconds: 2);
   static const Duration animationDuration = Duration(milliseconds: 300);
-  
+
   // Filter configurations
-  static const List<String> filterOptions = ['ALL', 'CREATE', 'UPDATE', 'DELETE', 'BULK_DELETE'];
-  
+  static const List<String> filterOptions = [
+    'ALL',
+    'CREATE',
+    'UPDATE',
+    'DELETE',
+    'BULK_DELETE'
+  ];
+
   static const Map<String, String> filterLabels = {
     'ALL': 'All Changes',
     'CREATE': 'Created',
@@ -113,14 +121,18 @@ class AppConstants {
   };
 
   // Asset types
-  static const List<String> assetTypes = ['Transactional', 'Savings', 'Investment'];
+  static const List<String> assetTypes = [
+    'Transactional',
+    'Savings',
+    'Investment'
+  ];
   static const List<String> currencies = ['USD', 'EUR', 'JPY', 'IDR'];
 
   // Date format configurations
   static const String europeanDateFormat = 'dd/MM/yyyy - HH:mm';
   static const String americanDateFormat = 'MMM d, yyyy - h:mm a';
   static const String defaultDateFormat = europeanDateFormat;
-  
+
   static const Map<String, String> dateFormatLabels = {
     europeanDateFormat: 'European Format (24-hour)',
     americanDateFormat: 'American Format (12-hour)',
@@ -134,8 +146,10 @@ class AppConstants {
   // App strings - const for performance
   static const String appTitle = 'Finance Tracker';
   static const String exitConfirmTitle = 'Exit App';
-  static const String exitConfirmMessage = 'Are you sure you want to exit the Finance Tracker app?';
-  static const String exitConfirmMessageWithSave = 'Are you sure you want to exit the Finance Tracker app?\n\nYour data will be saved automatically.';
+  static const String exitConfirmMessage =
+      'Are you sure you want to exit the Finance Tracker app?';
+  static const String exitConfirmMessageWithSave =
+      'Are you sure you want to exit the Finance Tracker app?\n\nYour data will be saved automatically.';
 }
 
 // Performance-optimized widgets as separate classes
@@ -153,13 +167,19 @@ class AppWidgets {
     child: CircularProgressIndicator(),
   );
 
-  static const SizedBox smallSpacing = SizedBox(height: AppConstants.spacingSmall);
-  static const SizedBox mediumSpacing = SizedBox(height: AppConstants.spacingMedium);
-  static const SizedBox largeSpacing = SizedBox(height: AppConstants.spacingLarge);
-  static const SizedBox extraLargeSpacing = SizedBox(height: AppConstants.spacingXLarge);
+  static const SizedBox smallSpacing =
+      SizedBox(height: AppConstants.spacingSmall);
+  static const SizedBox mediumSpacing =
+      SizedBox(height: AppConstants.spacingMedium);
+  static const SizedBox largeSpacing =
+      SizedBox(height: AppConstants.spacingLarge);
+  static const SizedBox extraLargeSpacing =
+      SizedBox(height: AppConstants.spacingXLarge);
 
-  static const SizedBox smallHorizontalSpacing = SizedBox(width: AppConstants.spacingSmall);
-  static const SizedBox mediumHorizontalSpacing = SizedBox(width: AppConstants.spacingMedium);
+  static const SizedBox smallHorizontalSpacing =
+      SizedBox(width: AppConstants.spacingSmall);
+  static const SizedBox mediumHorizontalSpacing =
+      SizedBox(width: AppConstants.spacingMedium);
 
   // App Icon widget - const for performance
   static const Widget appIcon = Icon(
@@ -176,7 +196,7 @@ class AppWidgets {
     Icons.warning_amber,
     color: AppConstants.orangeWarning,
   );
-  
+
   // Settings icon
   static const Icon settingsIcon = Icon(
     Icons.settings,
